@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.86.0/dist/phaser.js"></script>
+</head>
+<body>
+    <script>
+    const config = {
+        type: Phaser.AUTO,
+        width: 800,
+        height: 600,
+        scene: {
+            preload: preload,
+            create: create
+        }
+    };
+
+    const game = new Phaser.Game(config);
+
+    function preload() {
+        // Load assets here
+    }
+
+    function create() {
+        this.add.text(400, 300, 'Phaser is working!', { fontSize: '32px', fill: '#fff' }).setOrigin(0.5);
+    }
+    </script>
+</body>
+</html>
