@@ -1,32 +1,25 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
-<script src="https://cdn.jsdelivr.net/npm/phaser@3.86.0/dist/phaser.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lunar Lander: Gravity Bound</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.86.0/dist/phaser.min.js"></script>
 </head>
 <body>
-    <script>
-    const config = {
-        type: Phaser.AUTO,
-        width: 800,
-        height: 600,
-        scene: {
-            preload: preload,
-            create: create
-        }
-    };
 
-    const game = new Phaser.Game(config);
+    <div id="game-container"></div>
 
-    function preload() {
-        // Load assets here
-        //test
-    }
+    <script src="js/GameState.js"></script>
 
+    <script src="js/BootScene.js"></script>
+    <script src="js/MenuScene.js"></script>
+    <script src="js/UpgradeScene.js"></script>
+    <script src="js/GameScene.js"></script>
 
+    <script src="game.js"></script>
 
-    function create() {
-        this.add.text(400, 300, 'Phaser funktioniert!', { fontSize: '32px', fill: '#fff' }).setOrigin(0.5);
-    }
-    </script>
 </body>
 </html>
