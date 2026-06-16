@@ -10,7 +10,7 @@ const GameState = {
     // UPGRADES FUER DIE RAKETE (Phase 1: Horizontaler Flug)
     rakete: {
         // Bestimmt die Anzahl der Stufen (z.B. Stufe 1 bis 3)
-        tankStufe: 1,
+        tankStufe: 3,
         // Erhoeht den Geschwindigkeits-Boost bei perfektem Abwurf
         triebwerkStufe: 1,
         // Verringert den Luftwiderstand, Rakete gleitet weiter

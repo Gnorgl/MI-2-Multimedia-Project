@@ -1,30 +1,23 @@
-// Phaser 3 Hauptkonfiguration
+// game.js - Dynamische Anpassung fuer perfekte Schaerfe
 const config = {
     type: Phaser.AUTO,
-    width: 800,
-    height: 600,
-    parent: 'game-container', // Verweist auf die ID in der index.html
-    backgroundColor: '#000000', // Tiefschwarzer Weltraum-Hintergrund
-    
-    // Physik-Einstellungen
+    // Wir entfernen feste Breiten/Hoehen, da RESIZE das dynamisch regelt
+    width: window.innerWidth,
+    height: window.innerHeight,
+    parent: 'game-container',
+    backgroundColor: '#000000',
+    scale: {
+        mode: Phaser.Scale.RESIZE, // Passt die Aufloesung dynamisch an das Fenster an
+        autoCenter: Phaser.Scale.CENTER_BOTH
+    },
     physics: {
         default: 'arcade',
         arcade: {
-            gravity: { y: 0 }, // Keine globale Schwerkraft, da Phase 1 (Rakete) schwerelos fliegt.
-            // Die Schwerkraft fuer Phase 2 aktivieren wir spaeter gezielt nur fuer die Kapsel.
-            debug: false // Auf true setzen, um Hitboxen als Linien zu sehen
+            gravity: { y: 0 },
+            debug: false
         }
     },
-    
-    // Registrierung aller Szenen in der richtigen Reihenfolge
-    // Phaser startet automatisch mit der ersten Szene in dieser Liste
-    scene: [
-        BootScene,
-        MenuScene,
-        UpgradeScene,
-        GameScene
-    ]
+    scene: [BootScene, MenuScene, UpgradeScene, GameScene]
 };
 
-// Starten der Phaser-Spielinstanz
 const game = new Phaser.Game(config);
