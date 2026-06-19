@@ -6,11 +6,14 @@ class GameScene extends Phaser.Scene {
     init() {
         this.distanz = 0;
         this.aktuelleStufe = 1;
-        this.maxStufen = GameState.rakete.tankStufe;
-        this.istAmFliegen = false;
-        this.phase = 'rakete'; 
+        this.maxStufen = GameState.rakete.tankStufe; // Mehr Tank-Upgrades = Mehr QTE-Stufen = Weiterer Flug
+        this.phase = 'rakete'; // 'rakete' oder 'kapsel'
         
-        this.flugGeschwindigkeit = 100; 
+        // Unter-Zustand fuer den Raketenflug
+        this.raketenUnterPhase = 'boden'; // 'boden', 'kurve', 'flug'
+
+        // Basis-Geschwindigkeit gekoppelt an das Triebwerk-Upgrade
+        this.flugGeschwindigkeit = 100 * GameState.rakete.triebwerkStufe; 
 
         // Timing-Fenster Parameter
         this.stufenDauer = 3000; 
@@ -27,30 +30,33 @@ class GameScene extends Phaser.Scene {
         let width = this.scale.width;
         let height = this.scale.height;
 
-        // 1. PROZEDURALER STERNEN-HINTERGRUND (Fuer die Bewegungillusion)
+        // 1. Sternen-Hintergrund
         this.sterne = [];
         for (let i = 0; i < 100; i++) {
-            // Erzeuge zufaellige weisse Punkte im Raum
             let x = Phaser.Math.Between(0, width);
             let y = Phaser.Math.Between(0, height);
             let groesse = Phaser.Math.Between(1, 3);
             let stern = this.add.rectangle(x, y, groesse, groesse, 0xffffff);
-            // Speichere den Stern und eine individuelle Tiefe (fuer Parallax-Effekt)
             this.sterne.push({
                 objekt: stern,
-                speedFaktor: groesse * 0.5 // Groessere Sterne bewegen sich schneller = wirken naeher
+                speedFaktor: groesse * 0.5
             });
         }
 
-        // 2. Das Spielobjekt (Rakete / Kapsel)
-        // Wir lassen sie nun fest auf ihrer X-Position (width * 0.25)
+        // Wir definieren die feste Abschussrampen-Hoehe (wichtig fuer spaetere prozedurale Welt!)
+        this.bodenY = height - 80;
+
+        // 2. Das Spielobjekt (Rakete)
+        // Startet aufrecht (-90 Grad) auf dem Boden im linken Bereich
         this.raketePositionX = width * 0.25;
-        this.rakete = this.add.rectangle(this.raketePositionX, height / 2, 60, 20, 0xffffff);
+        this.rakete = this.add.rectangle(this.raketePositionX, this.bodenY - 30, 60, 20, 0xffffff);
+        this.rakete.angle = -90; 
+        
         this.physics.add.existing(this.rakete);
         this.rakete.body.setAllowGravity(false);
 
         // 3. UI Elemente
-        this.uiText = this.add.text(20, 20, 'Druecke LEERTASTE zum Starten!', {
+        this.uiText = this.add.text(20, 20, 'Druecke LEERTASTE zum Zuenden!', {
             fontSize: '20px', fill: '#ffffff', fontFamily: 'Arial'
         });
 
@@ -58,8 +64,9 @@ class GameScene extends Phaser.Scene {
             fontSize: '24px', fill: '#00ff00', fontFamily: 'Arial'
         });
 
-        this.balkenHintergrund = this.add.rectangle(width / 2, 30, 200, 20, 0x333333);
-        this.balkenTreibstoff = this.add.rectangle(width / 2, 30, 200, 20, 0x00ff00);
+        // Treibstoffbalken (Erst unsichtbar, wird nach der Kurve eingeblendet)
+        this.balkenHintergrund = this.add.rectangle(width / 2, 30, 200, 20, 0x333333).setVisible(false);
+        this.balkenTreibstoff = this.add.rectangle(width / 2, 30, 200, 20, 0x00ff00).setVisible(false);
 
         this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
         this.cursors = this.input.keyboard.createCursorKeys();
@@ -71,21 +78,61 @@ class GameScene extends Phaser.Scene {
 
         // === LOGIK PHASE 1: RAKETENFLUG ===
         if (this.phase === 'rakete') {
-            if (!this.istAmFliegen && Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
-                this.istAmFliegen = true;
-                this.uiText.setText('Rakete fliegt! Timing abwarten...');
-                return; 
+            
+            // ZUSTAND A: Steht am Boden und wartet auf Zuendung
+            if (this.raketenUnterPhase === 'boden') {
+                if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
+                    this.raketenUnterPhase = 'kurve';
+                    this.uiText.setText('Erhoehe Schub... Einleiten der Flugkurve!');
+                    
+                    // Physik-Impuls nach oben (Abhaengig von Triebwerk-Stufe)
+                    let startSchub = -250 - (GameState.rakete.triebwerkStufe * 50);
+                    this.rakete.body.setVelocityY(startSchub);
+                }
             }
+            
+            // ZUSTAND B: Rakete fliegt die Kurve (Gravity Turn)
+            else if (this.raketenUnterPhase === 'kurve') {
+                // Berechne Fortschritt: Wie weit ist die Rakete vom Boden abgehoben?
+                let zurueckgelegteHoehe = this.bodenY - this.rakete.y;
+                let zielHoehe = height * 0.5; // Kurve soll in der Bildschirmmitte enden
+                
+                let prozent = Math.min(1, zurueckgelegteHoehe / zielHoehe);
+                
+                // 1. Drehe die Rakete kontinuierlich von -90 Grad auf 0 Grad (waagerecht)
+                this.rakete.angle = -90 + (prozent * 90);
+                
+                // 2. Biege die Geschwindigkeit um (weniger nach oben, mehr nach rechts)
+                let maxRechtsSpeed = this.flugGeschwindigkeit;
+                this.rakete.body.setVelocityX(prozent * maxRechtsSpeed);
 
-            if (this.istAmFliegen) {
-                // Distanz erhoehen
+                // Sterne bewegen sich gaaaanz leicht mit, um das Aufsteigen zu betonen
+                this.sterne.forEach(stern => {
+                    stern.objekt.y += 1 * stern.speedFaktor;
+                    if (stern.objekt.y > height) stern.objekt.y = 0;
+                });
+
+                // Wenn die Rakete waagerecht fliegt und die Zielhoehe erreicht hat -> Wechsel zum QTE
+                if (prozent >= 1) {
+                    this.raketenUnterPhase = 'flug';
+                    this.rakete.body.setVelocityY(0); // Vertikale Bewegung komplett stoppen
+                    this.rakete.angle = 0;
+                    
+                    // Blende den Treibstoffbalken ein
+                    this.balkenHintergrund.setVisible(true);
+                    this.balkenTreibstoff.setVisible(true);
+                    this.uiText.setText('Orbit erreicht! Bereit machen fuer Stufen-Trennung...');
+                }
+            }
+            
+            // ZUSTAND C: Der eigentliche QTE-Flug im Orbit (Bereits getestet und bewaehrt)
+            else if (this.raketenUnterPhase === 'flug') {
                 this.distanz += Math.floor((this.flugGeschwindigkeit * delta) / 1000);
                 this.uiText.setText(`Stufe: ${this.aktuelleStufe}/${this.maxStufen} | Distanz: ${this.distanz}m | Speed: ${this.flugGeschwindigkeit}km/h`);
 
-                // PARALLAX-BACKGROUND MOVEMENT: Sterne nach links bewegen basierend auf Flug-Geschwindigkeit
+                // Parallax-Effekt der Sterne nach links
                 this.sterne.forEach(stern => {
                     stern.objekt.x -= (this.flugGeschwindigkeit * 0.05) * stern.speedFaktor * (delta / 16);
-                    // Wenn ein Stern links aus dem Bild fliegt, rechts wieder reinsetzen
                     if (stern.objekt.x < 0) {
                         stern.objekt.x = width;
                         stern.objekt.y = Phaser.Math.Between(0, height);
@@ -112,10 +159,8 @@ class GameScene extends Phaser.Scene {
             }
         }
         
-        // === LOGIK PHASE 2: KAPSEL-SINKFLUG ===
-        // === IN DER UPDATE-METHODE (Unter Phase 2 einbauen) ===
+        // === LOGIK PHASE 2: KAPSEL-SINKFLUG (Unveraendert stabil) ===
         else if (this.phase === 'kapsel') {
-            // Sichere die aktuelle Sinkrate, solange wir noch in der Luft sind!
             if (this.rakete.y <= height - 50) {
                 this.letzteSinkrate = this.rakete.body.velocity.y;
             }
@@ -126,7 +171,6 @@ class GameScene extends Phaser.Scene {
             this.balkenTreibstoff.width = Math.max(0, 200 * tankProzent);
             this.balkenTreibstoff.setFillStyle(0x00ffff); 
 
-            // Sterne-Animation im Sinkflug
             this.sterne.forEach(stern => {
                 stern.objekt.y -= (this.rakete.body.velocity.y * 0.02) * stern.speedFaktor;
                 if (stern.objekt.y < 0) {
@@ -135,7 +179,6 @@ class GameScene extends Phaser.Scene {
                 }
             });
 
-            // Steuerung
             if (this.cursors.left.isDown) {
                 this.rakete.angle -= 2; 
             } else if (this.cursors.right.isDown) {
@@ -152,7 +195,6 @@ class GameScene extends Phaser.Scene {
                 this.kapselTreibstoff -= 0.5 * (delta / 16);
             }
 
-            // Wenn die Kapsel den Boden erreicht
             if (this.rakete.y > height - 50) {
                 this.pruefeLandung();
             }
@@ -175,7 +217,6 @@ class GameScene extends Phaser.Scene {
         this.naechstePhaseLogik();
     }
 
-    // Ersetze die bestehende Funktion mit dieser Version (inklusive perfektem Kapsel-Abwurf)
     naechstePhaseLogik() {
         this.stufenTimer = 0;
         this.aktuelleStufe++;
@@ -183,11 +224,9 @@ class GameScene extends Phaser.Scene {
         if (this.aktuelleStufe > this.maxStufen) {
             this.phase = 'kapsel';
             
-            // DEINE IDEE: Ein letztes QTE fuer den Kapsel-Abwurf!
-            // Wir pruefen, ob die Leertaste beim allerletzten Klick im perfektem Fenster war
             if (this.stufenTimer >= this.perfektFensterStart && this.stufenTimer <= this.perfektFensterEnde) {
                 this.kapselZusatzBoost = true;
-                this.zeigeFeedbackText("KAPSEL-TRENUNG: PERFEKT! +BOOST");
+                this.zeigeFeedbackText("KAPSEL-TRENNUNG: PERFEKT! +BOOST");
             } else {
                 this.kapselZusatzBoost = false;
                 this.zeigeFeedbackText("KAPSEL-TRENNUNG ERFOLGT");
@@ -197,7 +236,12 @@ class GameScene extends Phaser.Scene {
         }
     }
 
+    starcheKapselSinkflug() { /* ... bleibt identisch ... */ }
     starteKapselSinkflug() {
+        this.statusText.setText("KAPSEL-SINKFLUG AKTIV!");
+        this.balkenHintergrund.setVisible(true);
+        this.balkenTreibstoff.setVisible(true);
+        
         let width = this.scale.width;
         this.rakete.x = width / 2;
         this.rakete.y = 100;
@@ -207,12 +251,11 @@ class GameScene extends Phaser.Scene {
 
         this.rakete.body.setAllowGravity(true);
         
-        // Wenn das letzte QTE perfekt war, hat die Kapsel weniger Fallgeschwindigkeit beim Start!
         if (this.kapselZusatzBoost) {
-            this.rakete.body.setGravityY(60); // Halbe Schwerkraft zum Start (Kapsel schwebt laenger)
-            this.rakete.body.setVelocityY(-50); // Kleiner Kick nach oben
+            this.rakete.body.setGravityY(60); 
+            this.rakete.body.setVelocityY(-50); 
         } else {
-            this.rakete.body.setGravityY(120); // Normale Schwerkraft
+            this.rakete.body.setGravityY(120); 
         }
 
         GameState.letzteDistanz = this.distanz;
@@ -220,17 +263,13 @@ class GameScene extends Phaser.Scene {
 
     pruefeLandung() {
         let finaleGeschwindigkeit = this.letzteSinkrate || 0;
-
         this.rakete.body.setAllowGravity(false);
         this.rakete.body.setVelocity(0, 0);
 
         let maxSichereGeschwindigkeit = 60 + (GameState.kapsel.robustheitStufe * 15);
-        
-        // NEU: Winkel pruefen. Aufrecht ist 0 Grad. Wir erlauben +/- 20 Grad Toleranz
         let aktuellerWinkel = Math.abs(this.rakete.angle);
         let winkelGueltig = (aktuellerWinkel <= 20 || aktuellerWinkel >= 340);
 
-        // Beide Bedingungen muessen erfuellt sein (Geschwindigkeit UND Winkel)
         if (finaleGeschwindigkeit <= maxSichereGeschwindigkeit && winkelGueltig) {
             this.statusText.setText(`ERFOLGREICHE LANDUNG!\nRate: ${Math.floor(finaleGeschwindigkeit)} m/s | Winkel: ${Math.round(this.rakete.angle)}°`);
             this.statusText.setFill('#00ff00');
