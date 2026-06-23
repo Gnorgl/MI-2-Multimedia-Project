@@ -1,13 +1,11 @@
-// game.js - Dynamische Anpassung fuer perfekte Schaerfe
 const config = {
     type: Phaser.AUTO,
-    // Wir entfernen feste Breiten/Hoehen, da RESIZE das dynamisch regelt
     width: window.innerWidth,
     height: window.innerHeight,
     parent: 'game-container',
-    backgroundColor: '#000000',
+    backgroundColor: '#13272b',
     scale: {
-        mode: Phaser.Scale.RESIZE, // Passt die Aufloesung dynamisch an das Fenster an
+        mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH
     },
     physics: {
@@ -17,7 +15,7 @@ const config = {
             debug: false
         }
     },
-    scene: [BootScene, MenuScene, UpgradeScene, GameScene]
+    scene: [BootScene, MenuScene, GameScene]
 };
 
 const game = new Phaser.Game(config);
