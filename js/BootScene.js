@@ -11,6 +11,6 @@ class BootScene extends Phaser.Scene {
 
     create() {
         // Sofortiger Wechsel zum Hauptmenue
-        this.scene.start('MenuScene');
+       this.scene.start('GameScene'); // Startet direkt die GameScene mit dem integrierten Menue!
     }
 }
