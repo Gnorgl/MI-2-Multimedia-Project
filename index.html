@@ -3,21 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RiskyRescue</title>
+    <title>Helicopter Rescue</title>
     <link rel="stylesheet" href="css/style.css">
-    
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.86.0/dist/phaser.min.js"></script>
 </head>
 <body>
 
-    <div id="game-container"></div>
+    <div class="webpage-layout">
+        
+        <div class="side-panel left-panel">
+            <h2>Steuerung</h2>
+            <div class="control-box"><strong>A</strong> oder <strong>⬅</strong><br>Links fliegen</div>
+            <div class="control-box"><strong>D</strong> oder <strong>➡</strong><br>Rechts fliegen</div>
+            <p class="story-text">Rette die Wanderer auf den Plattformen und fliehe vor der aufsteigenden Lava! Achtung: Lande nur auf den Kufen. Berührt der Rotor ein Hindernis, explodierst du!</p>
+        </div>
 
-    <script src="js/GameState.js"></script>
-    <script src="js/BootScene.js"></script>
-    <script src="js/MenuScene.js"></script>
-    <script src="js/GameScene.js"></script>
+        <div id="game-container"></div>
 
-    <script src="game.js"></script>
+        <div class="side-panel right-panel">
+            <h2>Highscore</h2>
+            <div class="score-display">0000</div>
+            <h2>Heli-Shop</h2>
+            <p class="shop-preview">Demnächst verfügbar...</p>
+        </div>
 
+    </div>
+
+    <script src="js/scenes/GameScene.js"></script>
+    <script src="js/config.js"></script>
 </body>
 </html>
