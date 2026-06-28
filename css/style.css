@@ -1,14 +1,14 @@
-/* Grundaufbau der Seite */
+/* Grundaufbau der Seite mit einem coolen radialen Verlauf */
 body {
     margin: 0;
     padding: 0;
-    background-color: #2c3e50;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: radial-gradient(circle, #2c3e50 0%, #0f171e 100%);
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     color: #ecf0f1;
     overflow: hidden;
 }
 
-/* Flexbox-Layout, um die Panels und das Spiel nebeneinander anzuordnen */
+/* Haupt-Layout-Gitter */
 .webpage-layout {
     display: flex;
     justify-content: center;
@@ -17,65 +17,91 @@ body {
     height: 100vh;
     box-sizing: border-box;
     padding: 20px;
-    gap: 30px; /* Abstand zwischen den Panels und dem Spiel */
+    gap: 40px;
 }
 
 /* Der Kasten für das Phaser-Spiel */
 #game-container {
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-    border-radius: 8px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(52, 152, 219, 0.2);
+    border-radius: 12px;
     overflow: hidden;
     max-height: 90vh; 
-    aspect-ratio: 600 / 800; /* Auf 600 angepasst */
+    aspect-ratio: 600 / 800;
+    transition: transform 0.3s ease;
 }
 
-/* Gemeinsame Styles für die Seiten-Panels */
+/* Schicker "Glassmorphism"-Look für die Seiten-Panels */
 .side-panel {
-    width: 250px;
-    background: rgba(52, 73, 94, 0.8);
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-    border: 1px solid rgba(255,255,255,0.1);
+    width: 260px;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     text-align: center;
 }
 
 .side-panel h2 {
     margin-top: 0;
-    color: #f1c40f; /* Schickes Arcade-Gelb */
-    font-size: 1.5rem;
-    border-bottom: 2px solid rgba(255,255,255,0.1);
-    padding-bottom: 10px;
+    color: #f1c40f; 
+    font-size: 1.4rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-bottom: 2px solid rgba(241, 196, 15, 0.3);
+    padding-bottom: 12px;
+    margin-bottom: 20px;
 }
 
-/* Styling für die Steuerungs-Anleitung */
+/* Styling für die Steuerungs-Anleitung (sieht jetzt aus wie echte Tasten) */
 .control-box {
-    background: #2c3e50;
-    padding: 10px;
-    margin: 10px 0;
-    border-radius: 6px;
-    border-left: 4px solid #3498db;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 12px;
+    margin: 15px 0;
+    border-radius: 8px;
     font-size: 0.9rem;
+    color: #bdc3c7;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Tastatur-Key-Effekt */
+.control-box strong {
+    display: inline-block;
+    background: #ecf0f1;
+    color: #2c3e50;
+    padding: 2px 8px;
+    border-radius: 4px;
+    box-shadow: 0 3px 0 #bdc3c7;
+    margin: 0 3px;
+    font-family: monospace;
 }
 
 .story-text {
     font-size: 0.85rem;
-    line-height: 1.4;
-    color: #bdc3c7;
-    margin-top: 15px;
+    line-height: 1.5;
+    color: #95a5a6;
+    margin-top: 20px;
 }
 
-/* Highscore-Anzeige */
+/* Digitale Highscore-Anzeige */
 .score-display {
-    font-size: 2.5rem;
+    font-size: 3rem;
     font-weight: bold;
     color: #2ecc71;
     font-family: 'Courier New', Courier, monospace;
-    margin: 20px 0;
+    text-shadow: 0 0 15px rgba(46, 204, 113, 0.4);
+    margin: 25px 0;
 }
 
-/* RESPONSIVE DESIGN: Auf Handys blenden wir die Panels aus */
-@media (max-width: 1100px) {
+.shop-preview {
+    font-style: italic;
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
     .side-panel {
         display: none;
     }
