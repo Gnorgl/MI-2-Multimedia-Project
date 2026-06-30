@@ -16,14 +16,16 @@ class GameScene extends Phaser.Scene {
         this.flyingHazardTimer = 0;
         this.flyingHazardInterval = 2500; 
 
-        // Variablen für die Lava-Logik
         this.lavaGraphics = null;
         this.lavaStarted = false;
         this.lavaTriggered = false; 
-        
-        // Die Lava startet am Anfang weit unter dem Helikopter (Heli ist bei Y=785)
         this.lavaCurrentY = 1200;       
-        this.maxLavaDistance = 550; // Maximaler Abstand, wie weit die Lava zurückfallen darf
+        this.maxLavaDistance = 550; 
+
+        // NEU: Variablen für die Personen-Rettung
+        this.survivors = null;
+        this.rescuedCount = 0; // Temporärer Zähler für die aktuelle Runde
+        this.rescueChance = 0.50; // 50% Chance, dass auf einem Hindernis eine Person steht
 
         this.isBouncing = false; 
         this.bounceTimer = 0;   
@@ -92,16 +94,28 @@ class GameScene extends Phaser.Scene {
         rocketCtx.fillStyle = '#00ffcc';
         rocketCtx.fillRect(0, 0, 30, 80);
         rocketCanvas.refresh();
+
+        // NEU: Person (kleines, senkrechtes Rechteck, z.B. weiß/hellgrau)
+        // ERHÖHT: Person ist jetzt größer (20x40 Pixel statt 12x24)
+        let personCanvas = this.textures.createCanvas('person_placeholder', 20, 40);
+        let personCtx = personCanvas.context;
+        personCtx.fillStyle = '#e0e0e0';
+        personCtx.fillRect(0, 0, 20, 40);
+        canvas.refresh(); // Falls du refresh() nutzt, sonst personCanvas.refresh();
+        personCanvas.refresh();
     }
 
     create() {
         // --- 1. WELTGRENZEN ---
         this.physics.world.setBounds(0, -999999, 800, 999999 + 800); 
 
-        // --- 2. HINDERNIS-GRUPPEN ---
+        // --- 2. HINDERNIS- & RETTUNGS-GRUPPEN ---
         this.hazards = this.physics.add.staticGroup();
         this.platforms = this.physics.add.staticGroup();
         this.flyingHazards = this.physics.add.group({ allowGravity: false });
+        
+        // NEU: Statische Gruppe für die zu rettenden Personen
+        this.survivors = this.physics.add.staticGroup();
 
         // --- 3. WÄNDE INITIALISIEREN ---
         this.walls = this.physics.add.staticGroup();
@@ -112,7 +126,6 @@ class GameScene extends Phaser.Scene {
         this.player.setBounce(1, 0);
 
         // --- 5. LAVA GRAFIK ERZEUGEN ---
-        // Wir nutzen ein Graphics-Objekt, das wir flexibel zeichnen können und legen es ganz nach vorne
         this.lavaGraphics = this.add.graphics();
         this.lavaGraphics.setDepth(100); 
 
@@ -128,6 +141,9 @@ class GameScene extends Phaser.Scene {
             }
         }, null, this);
 
+        // NEU: Overlap für das Einsammeln der Personen im haarscharfen Vorbeiflug
+        this.physics.add.overlap(this.player, this.survivors, this.collectPerson, null, this);
+
         this.cursors = this.input.keyboard.createCursorKeys();
         this.leftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
         this.rightKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
@@ -141,13 +157,11 @@ class GameScene extends Phaser.Scene {
         let cameraBottom = this.cameras.main.scrollY + this.cameras.main.height;
         let cameraTop = this.cameras.main.scrollY;
 
-        // Manueller Absturz-Check, falls man unter das Sichtfeld fällt
         if (this.player.y > cameraBottom + 50) {
             this.resetGameManual(); 
             return;
         }
 
-        // Tasten-Abfrage für den Lava-Start
         let anyKeyDown = this.cursors.left.isDown || this.leftKey.isDown || 
                           this.cursors.right.isDown || this.rightKey.isDown;
 
@@ -162,10 +176,8 @@ class GameScene extends Phaser.Scene {
         this.generateHazards();
         this.handleFlyingHazards(delta, cameraTop, cameraBottom);
         
-        // Lava-Berechnung & Zeichnen
         this.handleLava(delta, cameraBottom);
 
-        // Mathematischer Lava-Kollisionscheck (Simpel, stabil, fehlerfrei!)
         if (this.player.y >= this.lavaCurrentY) {
             this.resetGameManual();
             return;
@@ -220,29 +232,32 @@ class GameScene extends Phaser.Scene {
         this.player.setVelocityY(this.heliSettings.liftPower);
     }
 
-    // Steuert das Aufsteigen, den Maximalabstand und das visuelle Rendern der Lava
     handleLava(delta, cameraBottom) {
         if (this.lavaStarted) {
-            // NEU: Lava steigt jetzt mit 50% der Heli-LiftPower auf (0.5 statt 0.75)
             let lavaSpeed = Math.abs(this.heliSettings.liftPower) * 0.5;
             this.lavaCurrentY -= (lavaSpeed * delta) / 1000;
 
-            // Gummiband-Effekt deckeln
             if (this.lavaCurrentY > this.player.y + this.maxLavaDistance) {
                 this.lavaCurrentY = this.player.y + this.maxLavaDistance;
             }
         }
 
-        // Lava visuell zeichnen (nur im sichtbaren Bereich der Kamera bis nach unten hin)
         this.lavaGraphics.clear();
         
-        // Nur zeichnen, wenn die Lava-Oberfläche im oder knapp unter dem Bildschirm liegt
         if (this.lavaCurrentY < cameraBottom + 100) {
             this.lavaGraphics.fillStyle(0xff2200, 1.0);
-            // Zeichnet ein Rechteck von der aktuellen Lava-Höhe bis zum unteren Bildschirmrand
             let height = cameraBottom - this.lavaCurrentY + 200;
             this.lavaGraphics.fillRect(0, this.lavaCurrentY, 800, height);
         }
+    }
+
+    // NEU: Methode zum Einsammeln einer Person bei Berührung
+    collectPerson(player, person) {
+        this.survivors.killAndHide(person);
+        person.body.enable = false; // Physischen Körper abschalten
+        
+        this.rescuedCount += 1;
+        console.log("Person gerettet! Runden-Konto:", this.rescuedCount);
     }
 
     generateHazards() {
@@ -253,21 +268,47 @@ class GameScene extends Phaser.Scene {
 
             let randomX = Phaser.Math.Between(150, 650);
             let blockType = Phaser.Math.Between(0, 2);
+            let block = null;
 
+            // 1. Das eigentliche Hindernis erstellen
             if (blockType === 0) {
-                let block = this.platforms.create(randomX, this.highestGeneratedHazardY, 'block_square');
+                block = this.platforms.create(randomX, this.highestGeneratedHazardY, 'block_square');
                 block.refreshBody();
             } else if (blockType === 1) {
-                let block = this.hazards.create(randomX, this.highestGeneratedHazardY, 'block_rect');
+                block = this.hazards.create(randomX, this.highestGeneratedHazardY, 'block_rect');
                 block.refreshBody();
             } else {
-                let block = this.hazards.create(randomX, this.highestGeneratedHazardY, 'block_triangle');
+                block = this.hazards.create(randomX, this.highestGeneratedHazardY, 'block_triangle');
                 block.refreshBody();
+            }
+
+            // Würfeln, ob auf diesem Hindernis eine Person spawnt
+            if (Math.random() < this.rescueChance) {
+                let personX = randomX;
+                let personY = this.highestGeneratedHazardY;
+
+                // Berechne die exakte Oberkante/Spitze basierend auf der Form des Objekts
+                if (blockType === 0) {
+                    // Quadrat (120x120) -> Oberkante ist MitteY - 60, abzüglich halbe Personenhöhe (20)
+                    personY = this.highestGeneratedHazardY - 60 - 20;
+                } else if (blockType === 1) {
+                    // Rechteck/Turm (80x180) -> Oberkante ist MitteY - 90, abzüglich halbe Personenhöhe (20)
+                    personY = this.highestGeneratedHazardY - 90 - 20;
+                } else {
+                    // Dreieck (120x120) -> Die Spitze oben ist exakt bei MitteY - 60, abzüglich halbe Personenhöhe (20)
+                    personY = this.highestGeneratedHazardY - 60 - 20;
+                }
+
+                let person = this.survivors.create(personX, personY, 'person_placeholder');
+                person.refreshBody();
             }
         }
 
         this.clearOldObjectsFromGroup(this.hazards);
         this.clearOldObjectsFromGroup(this.platforms);
+        
+        // NEU: Auch alte Personen, die weit unter dem Bildschirm liegen, sauber weglöschen
+        this.clearOldObjectsFromGroup(this.survivors);
     }
 
     handleFlyingHazards(delta, cameraTop, cameraBottom) {
@@ -342,7 +383,11 @@ class GameScene extends Phaser.Scene {
         this.flyingHazards.clear(true, true);
         this.flyingHazardTimer = 0;
 
-        // Lava-Reset (wieder sicher nach unten schieben)
+        // NEU: Alle verbliebenen Personen beim Tod aus der Welt entfernen
+        this.survivors.clear(true, true);
+        // Da wir das Roguelike-Element einbauen, verfällt das Runden-Konto beim Absturz:
+        this.rescuedCount = 0;
+
         this.lavaStarted = false;
         this.lavaTriggered = false;
         this.lavaCurrentY = 1200;
