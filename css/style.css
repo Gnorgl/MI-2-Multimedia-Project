@@ -94,6 +94,33 @@ body {
     margin: 25px 0;
 }
 
+/* Live-Zähler für die geretteten Personen in der aktuellen Runde (Helles Cyan) */
+.current-rescue-display {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #3498db;
+    font-family: 'Courier New', Courier, monospace;
+    text-shadow: 0 0 15px rgba(52, 152, 219, 0.4);
+    margin: 25px 0;
+}
+
+/* Das kleine Icon/Emoji daneben dezent verkleinern */
+.walker-icon {
+    font-size: 2.2rem;
+    vertical-align: middle;
+    margin-left: 5px;
+}
+
+/* Digitale Münzen-Gesamtanzeige (Schickes Gold-Leuchten) */
+.coin-display {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #f1c40f;
+    font-family: 'Courier New', Courier, monospace;
+    text-shadow: 0 0 15px rgba(241, 196, 15, 0.4);
+    margin: 25px 0;
+}
+
 .shop-preview {
     font-style: italic;
     color: #7f8c8d;

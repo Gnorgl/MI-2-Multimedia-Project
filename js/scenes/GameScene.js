@@ -22,10 +22,14 @@ class GameScene extends Phaser.Scene {
         this.lavaCurrentY = 1200;       
         this.maxLavaDistance = 550; 
 
-        // NEU: Variablen für die Personen-Rettung
+        // Im constructor() ersetzen/ergänzen:
         this.survivors = null;
-        this.rescuedCount = 0; // Temporärer Zähler für die aktuelle Runde
-        this.rescueChance = 0.50; // 50% Chance, dass auf einem Hindernis eine Person steht
+        this.rescuedCount = 0;    // Personen in der aktuellen Runde (Highscore)
+        this.rescueChance = 0.50; 
+
+        // NEU: Permanentes Münzkonto aus dem localStorage laden (Standard: 0)
+        this.totalCoins = parseInt(localStorage.getItem('heli_total_coins')) || 0;
+        console.log("Spielstand geladen. Münzen insgesamt:", this.totalCoins);
 
         this.isBouncing = false; 
         this.bounceTimer = 0;   
@@ -176,12 +180,36 @@ class GameScene extends Phaser.Scene {
         this.generateHazards();
         this.handleFlyingHazards(delta, cameraTop, cameraBottom);
         
+        // ... (Dein bestehender Code in update) ...
+        
         this.handleLava(delta, cameraBottom);
 
+        // Prüft, ob der Spieler die Lava berührt
         if (this.player.y >= this.lavaCurrentY) {
             this.resetGameManual();
             return;
         }
+
+        // NEU: Prüft, ob die Lava eine zu rettende Person verschlingt
+        let lavaSwallowedSomeone = false;
+        this.survivors.children.iterate((person) => {
+            if (person && person.active) {
+                // Da Y nach unten hin größer wird: Wenn person.y >= lavaCurrentY, steht sie in der Lava
+                if (person.y >= this.lavaCurrentY) {
+                    lavaSwallowedSomeone = true;
+                }
+            }
+        });
+
+        if (lavaSwallowedSomeone) {
+            console.log("Game Over: Eine Person wurde von der Lava verschlungen!");
+            this.resetGameManual();
+            return;
+        }
+
+        // ... (Der Rest deiner update-Methode mit dem bounceTimer-Check etc.) ...
+
+        
 
         if (this.bounceTimer > 0) {
             this.bounceTimer -= delta;
@@ -258,6 +286,12 @@ class GameScene extends Phaser.Scene {
         
         this.rescuedCount += 1;
         console.log("Person gerettet! Runden-Konto:", this.rescuedCount);
+
+        // NEU: Live-Anzeige im HTML aktualisieren
+        let currentDisplay = document.querySelector('.current-rescue-display');
+        if (currentDisplay) {
+            currentDisplay.innerHTML = String(this.rescuedCount).padStart(4, '0') + ' <span class="walker-icon">🚶</span>';
+        }
     }
 
     generateHazards() {
@@ -369,6 +403,30 @@ class GameScene extends Phaser.Scene {
     }
 
     resetGameManual() {
+        // NEU: Payday! Abrechnung vor dem Reset
+        if (this.rescuedCount > 0) {
+            let coinsEarned = this.rescuedCount * 3;
+            this.totalCoins += coinsEarned;
+            
+            // Dauerhaft im Browser speichern
+            localStorage.setItem('heli_total_coins', this.totalCoins);
+            
+            console.log(`--- RUNDEN-ABRECHNUNG ---`);
+            console.log(`Personen gerettet: ${this.rescuedCount}`);
+            console.log(`Münzen verdient (+3x): ${coinsEarned}`);
+            console.log(`Münzen Gesamtstand: ${this.totalCoins}`);
+            
+            // Highscore-HTML aktualisieren (Nutzt jetzt die Personenanzahl!)
+            this.updateHighScoreHTML(this.rescuedCount);
+
+            // HIER EINSETZEN: Münz-HTML auf der rechten Seite direkt aktualisieren!
+            let coinElement = document.querySelector('.coin-display');
+            if (coinElement) {
+                coinElement.innerText = String(this.totalCoins).padStart(4, '0');
+            }
+        }
+
+        // Ab hier folgt dein normaler Reset-Code...
         this.player.setPosition(400, 785);
         this.player.setVelocity(0, 0);
         this.player.setAcceleration(0, 0);
@@ -383,9 +441,9 @@ class GameScene extends Phaser.Scene {
         this.flyingHazards.clear(true, true);
         this.flyingHazardTimer = 0;
 
-        // NEU: Alle verbliebenen Personen beim Tod aus der Welt entfernen
         this.survivors.clear(true, true);
-        // Da wir das Roguelike-Element einbauen, verfällt das Runden-Konto beim Absturz:
+        
+        // Wichtig: Runden-Zähler erst NACH der Abrechnung nullen!
         this.rescuedCount = 0;
 
         this.lavaStarted = false;
@@ -395,13 +453,24 @@ class GameScene extends Phaser.Scene {
 
         this.bounceTimer = 0;
         this.cameras.main.scrollY = 0;
+
+        // ... (Dein restlicher Reset-Code am Ende von resetGameManual) ...
+        this.bounceTimer = 0;
+        this.cameras.main.scrollY = 0;
+
+        // NEU: Live-Anzeige beim Game Over wieder auf 0000 zurücksetzen
+        let currentDisplay = document.querySelector('.current-rescue-display');
+        if (currentDisplay) {
+            currentDisplay.innerHTML = '0000 <span class="walker-icon">🚶</span>';
+        }
     }
 
     updateHighScoreHTML(newScore) {
-        let highScore = localStorage.getItem('heli_highscore') || 0;
+        // Speichert die höchste Anzahl geretteter Personen
+        let highScore = localStorage.getItem('heli_people_highscore') || 0;
         if (newScore > highScore) {
             highScore = newScore;
-            localStorage.setItem('heli_highscore', highScore);
+            localStorage.setItem('heli_people_highscore', highScore);
         }
         let element = document.querySelector('.score-display');
         if (element) element.innerText = String(highScore).padStart(4, '0');
