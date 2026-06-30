@@ -10,6 +10,21 @@ class GameScene extends Phaser.Scene {
         this.highestGeneratedY = 840; 
         this.wallBlockHeight = 40; 
         
+        this.highestGeneratedHazardY = 800; 
+        this.hazardIntervalY = 400;         
+
+        this.flyingHazardTimer = 0;
+        this.flyingHazardInterval = 2500; 
+
+        // Variablen für die Lava-Logik
+        this.lavaGraphics = null;
+        this.lavaStarted = false;
+        this.lavaTriggered = false; 
+        
+        // Die Lava startet am Anfang weit unter dem Helikopter (Heli ist bei Y=785)
+        this.lavaCurrentY = 1200;       
+        this.maxLavaDistance = 550; // Maximaler Abstand, wie weit die Lava zurückfallen darf
+
         this.isBouncing = false; 
         this.bounceTimer = 0;   
 
@@ -24,65 +39,137 @@ class GameScene extends Phaser.Scene {
     }
 
     preload() {
+        // Helikopter
         let canvas = this.textures.createCanvas('heli_placeholder', 40, 30);
         let ctx = canvas.context;
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, 40, 30);
         canvas.refresh();
 
+        // Wände
         let wallCanvas = this.textures.createCanvas('wall_placeholder', 40, this.wallBlockHeight);
         let wallCtx = wallCanvas.context;
         wallCtx.fillStyle = '#4a3728'; 
         wallCtx.fillRect(0, 0, 40, this.wallBlockHeight);
         wallCanvas.refresh();
+
+        // TYPE 1: Gleichseitiges Viereck
+        let sqCanvas = this.textures.createCanvas('block_square', 120, 120);
+        let sqCtx = sqCanvas.context;
+        sqCtx.fillStyle = '#0055ff';
+        sqCtx.fillRect(0, 0, 120, 120);
+        sqCanvas.refresh();
+
+        // TYPE 2: Senkrechtes Rechteck
+        let rectCanvas = this.textures.createCanvas('block_rect', 80, 180);
+        let rectCtx = rectCanvas.context;
+        rectCtx.fillStyle = '#ffaa00';
+        rectCtx.fillRect(0, 0, 80, 180);
+        rectCanvas.refresh();
+
+        // TYPE 3: Dreieck
+        let triCanvas = this.textures.createCanvas('block_triangle', 120, 120);
+        let triCtx = triCanvas.context;
+        triCtx.fillStyle = '#ff3333';
+        triCtx.beginPath();
+        triCtx.moveTo(60, 0);     
+        triCtx.lineTo(120, 120);  
+        triCtx.lineTo(0, 120);    
+        triCtx.closePath();
+        triCtx.fill();
+        triCanvas.refresh();
+
+        // Fliegender Querbalken
+        let horizCanvas = this.textures.createCanvas('block_horizontal', 160, 40);
+        let horizCtx = horizCanvas.context;
+        horizCtx.fillStyle = '#9900ff';
+        horizCtx.fillRect(0, 0, 160, 40);
+        horizCanvas.refresh();
+
+        // Rakete
+        let rocketCanvas = this.textures.createCanvas('block_rocket', 30, 80);
+        let rocketCtx = rocketCanvas.context;
+        rocketCtx.fillStyle = '#00ffcc';
+        rocketCtx.fillRect(0, 0, 30, 80);
+        rocketCanvas.refresh();
     }
 
     create() {
         // --- 1. WELTGRENZEN ---
         this.physics.world.setBounds(0, -999999, 800, 999999 + 800); 
 
-        // --- 2. LANDEPLATTFORM ERZEUGEN ---
+        // --- 2. HINDERNIS-GRUPPEN ---
+        this.hazards = this.physics.add.staticGroup();
         this.platforms = this.physics.add.staticGroup();
-        
-        let platCanvas = this.textures.createCanvas('landing_pad', 100, 20);
-        let platCtx = platCanvas.context;
-        platCtx.fillStyle = '#555555'; 
-        platCtx.fillRect(0, 0, 100, 20);
-        platCanvas.refresh();
-
-        let startPlatform = this.platforms.create(400, 790, 'landing_pad');
-        startPlatform.refreshBody();
+        this.flyingHazards = this.physics.add.group({ allowGravity: false });
 
         // --- 3. WÄNDE INITIALISIEREN ---
         this.walls = this.physics.add.staticGroup();
 
         // --- 4. HELIKOPTER ERZEUGEN ---
-        this.player = this.physics.add.sprite(400, 765, 'heli_placeholder'); 
+        this.player = this.physics.add.sprite(400, 785, 'heli_placeholder'); 
         this.player.setCollideWorldBounds(true, 0, 0, true);
         this.player.setBounce(1, 0);
 
-        // --- 5. KOLLISIONEN & STEUERUNG ---
-        this.physics.add.collider(this.player, this.platforms);
+        // --- 5. LAVA GRAFIK ERZEUGEN ---
+        // Wir nutzen ein Graphics-Objekt, das wir flexibel zeichnen können und legen es ganz nach vorne
+        this.lavaGraphics = this.add.graphics();
+        this.lavaGraphics.setDepth(100); 
+
+        // --- 6. KOLLISIONEN & STEUERUNG ---
         this.physics.add.collider(this.player, this.walls, this.handleWallCollision, null, this);
+        
+        this.physics.add.overlap(this.player, this.hazards, this.resetGameManual, null, this);
+        this.physics.add.overlap(this.player, this.flyingHazards, this.resetGameManual, null, this);
+
+        this.physics.add.collider(this.player, this.platforms, (player, platform) => {
+            if (!player.body.touching.down && !player.body.blocked.down) {
+                this.resetGameManual();
+            }
+        }, null, this);
 
         this.cursors = this.input.keyboard.createCursorKeys();
         this.leftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
         this.rightKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
 
-        // --- 6. KAMERA-EINSTELLUNGEN ---
+        // --- 7. KAMERA-EINSTELLUNGEN ---
         this.cameras.main.startFollow(this.player, true, 0, 1, 0, 200);
         this.cameras.main.setBounds(0, -999999, 800, 999999 + 800);
     }
 
     update(time, delta) {
-        // --- DYNAMISCHER ABSTURZ-CHECK ---
         let cameraBottom = this.cameras.main.scrollY + this.cameras.main.height;
+        let cameraTop = this.cameras.main.scrollY;
+
+        // Manueller Absturz-Check, falls man unter das Sichtfeld fällt
         if (this.player.y > cameraBottom + 50) {
-            this.scene.restart();
+            this.resetGameManual(); 
             return;
         }
 
+        // Tasten-Abfrage für den Lava-Start
+        let anyKeyDown = this.cursors.left.isDown || this.leftKey.isDown || 
+                          this.cursors.right.isDown || this.rightKey.isDown;
+
+        if (anyKeyDown && !this.lavaTriggered) {
+            this.lavaTriggered = true;
+            this.time.delayedCall(1000, () => {
+                this.lavaStarted = true;
+            }, [], this);
+        }
+
         this.generateWalls();
+        this.generateHazards();
+        this.handleFlyingHazards(delta, cameraTop, cameraBottom);
+        
+        // Lava-Berechnung & Zeichnen
+        this.handleLava(delta, cameraBottom);
+
+        // Mathematischer Lava-Kollisionscheck (Simpel, stabil, fehlerfrei!)
+        if (this.player.y >= this.lavaCurrentY) {
+            this.resetGameManual();
+            return;
+        }
 
         if (this.bounceTimer > 0) {
             this.bounceTimer -= delta;
@@ -131,6 +218,138 @@ class GameScene extends Phaser.Scene {
 
     applyLift() {
         this.player.setVelocityY(this.heliSettings.liftPower);
+    }
+
+    // Steuert das Aufsteigen, den Maximalabstand und das visuelle Rendern der Lava
+    handleLava(delta, cameraBottom) {
+        if (this.lavaStarted) {
+            // NEU: Lava steigt jetzt mit 50% der Heli-LiftPower auf (0.5 statt 0.75)
+            let lavaSpeed = Math.abs(this.heliSettings.liftPower) * 0.5;
+            this.lavaCurrentY -= (lavaSpeed * delta) / 1000;
+
+            // Gummiband-Effekt deckeln
+            if (this.lavaCurrentY > this.player.y + this.maxLavaDistance) {
+                this.lavaCurrentY = this.player.y + this.maxLavaDistance;
+            }
+        }
+
+        // Lava visuell zeichnen (nur im sichtbaren Bereich der Kamera bis nach unten hin)
+        this.lavaGraphics.clear();
+        
+        // Nur zeichnen, wenn die Lava-Oberfläche im oder knapp unter dem Bildschirm liegt
+        if (this.lavaCurrentY < cameraBottom + 100) {
+            this.lavaGraphics.fillStyle(0xff2200, 1.0);
+            // Zeichnet ein Rechteck von der aktuellen Lava-Höhe bis zum unteren Bildschirmrand
+            let height = cameraBottom - this.lavaCurrentY + 200;
+            this.lavaGraphics.fillRect(0, this.lavaCurrentY, 800, height);
+        }
+    }
+
+    generateHazards() {
+        let targetY = this.player.y - 1000;
+
+        while (this.highestGeneratedHazardY > targetY) {
+            this.highestGeneratedHazardY -= this.hazardIntervalY;
+
+            let randomX = Phaser.Math.Between(150, 650);
+            let blockType = Phaser.Math.Between(0, 2);
+
+            if (blockType === 0) {
+                let block = this.platforms.create(randomX, this.highestGeneratedHazardY, 'block_square');
+                block.refreshBody();
+            } else if (blockType === 1) {
+                let block = this.hazards.create(randomX, this.highestGeneratedHazardY, 'block_rect');
+                block.refreshBody();
+            } else {
+                let block = this.hazards.create(randomX, this.highestGeneratedHazardY, 'block_triangle');
+                block.refreshBody();
+            }
+        }
+
+        this.clearOldObjectsFromGroup(this.hazards);
+        this.clearOldObjectsFromGroup(this.platforms);
+    }
+
+    handleFlyingHazards(delta, cameraTop, cameraBottom) {
+        this.flyingHazardTimer += delta;
+
+        if (this.flyingHazardTimer >= this.flyingHazardInterval && this.player.y < 600) {
+            this.flyingHazardTimer = 0;
+
+            if (Phaser.Math.Between(0, 1) === 1) {
+                let isRocket = Phaser.Math.Between(0, 1) === 1;
+
+                if (isRocket) {
+                    let spawnX = Phaser.Math.Between(150, 650); 
+                    let spawnY = cameraBottom + 50; 
+                    
+                    let rocket = this.flyingHazards.create(spawnX, spawnY, 'block_rocket');
+                    
+                    let rocketSpeed = -(this.heliSettings.maxSpeedY + 150);
+                    rocket.setVelocityY(rocketSpeed);
+                } else {
+                    let fromLeft = Phaser.Math.Between(0, 1) === 1;
+                    let spawnX = fromLeft ? -200 : 1000;
+                    let spawnY = Phaser.Math.Between(cameraTop - 50, cameraTop + 250);
+
+                    let bar = this.flyingHazards.create(spawnX, spawnY, 'block_horizontal');
+                    
+                    let speedX = Phaser.Math.Between(150, 250);
+                    bar.setVelocityX(fromLeft ? speedX : -speedX);
+                }
+            }
+        }
+
+        this.flyingHazards.children.iterate((child) => {
+            if (child) {
+                if (child.texture.key === 'block_rocket' && child.y < cameraTop - 100) {
+                    this.flyingHazards.killAndHide(child);
+                    child.body.enable = false;
+                }
+                else if (child.texture.key === 'block_horizontal' && (child.x < -300 || child.x > 1100)) {
+                    this.flyingHazards.killAndHide(child);
+                    child.body.enable = false;
+                }
+                else if (child.y > cameraBottom + 200) {
+                    this.flyingHazards.killAndHide(child);
+                    child.body.enable = false;
+                }
+            }
+        });
+    }
+
+    clearOldObjectsFromGroup(group) {
+        group.children.iterate((child) => {
+            if (child && child.y > this.player.y + 1000) {
+                group.killAndHide(child);
+                child.body.enable = false; 
+            }
+        });
+    }
+
+    resetGameManual() {
+        this.player.setPosition(400, 785);
+        this.player.setVelocity(0, 0);
+        this.player.setAcceleration(0, 0);
+        
+        this.walls.clear(true, true);
+        this.highestGeneratedY = 840;
+
+        this.hazards.clear(true, true);
+        this.platforms.clear(true, true);
+        this.highestGeneratedHazardY = 800;
+
+        this.flyingHazards.clear(true, true);
+        this.flyingHazardTimer = 0;
+
+        // Lava-Reset (wieder sicher nach unten schieben)
+        this.lavaStarted = false;
+        this.lavaTriggered = false;
+        this.lavaCurrentY = 1200;
+        this.lavaGraphics.clear();
+
+        this.bounceTimer = 0;
+        this.cameras.main.scrollY = 0;
     }
 
     updateHighScoreHTML(newScore) {
