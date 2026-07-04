@@ -133,3 +133,119 @@ body {
         display: none;
     }
 }
+
+/* Shop Container & Karten-Design */
+.shop-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.shop-card {
+    display: flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 10px;
+    text-align: left;
+    transition: all 0.3s ease;
+}
+
+/* Die Buchstabentaste (Q, W, E) auf der Karte */
+.card-key {
+    background: #ecf0f1;
+    color: #2c3e50;
+    font-weight: bold;
+    font-family: monospace;
+    padding: 4px 10px;
+    border-radius: 4px;
+    box-shadow: 0 2px 0 #bdc3c7;
+    margin-right: 12px;
+    font-size: 1rem;
+}
+
+.card-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.card-title {
+    font-size: 0.95rem;
+    font-weight: bold;
+    color: #ecf0f1;
+}
+
+.card-cost {
+    font-size: 0.8rem;
+    color: #f1c40f;
+}
+
+/* --- HIER SIND DIE GEFORDERTEN KEYFRAMES --- */
+@keyframes active-glow {
+    0% {
+        box-shadow: 0 0 5px rgba(52, 152, 219, 0.5), inset 0 0 5px rgba(52, 152, 219, 0.2);
+        border-color: rgba(52, 152, 219, 0.6);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(52, 152, 219, 0.9), inset 0 0 10px rgba(52, 152, 219, 0.5);
+        border-color: rgba(52, 152, 219, 1);
+        background: rgba(52, 152, 219, 0.15);
+    }
+    100% {
+        box-shadow: 0 0 5px rgba(52, 152, 219, 0.5), inset 0 0 5px rgba(52, 152, 219, 0.2);
+        border-color: rgba(52, 152, 219, 0.6);
+    }
+}
+
+/* Diese Klasse wird per JS angehängt, wenn ein Item aktiv ist */
+.shop-card.active-item {
+    animation: active-glow 1.2s ease-in-out infinite;
+}
+/* Bereich für den Shop-Button unter den Münzen */
+.shop-button-area {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: center;
+}
+
+/* Styling für den Arcade-Button */
+.menu-button {
+    background: #f1c40f;
+    color: #2c3e50;
+    border: none;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1rem;
+    font-weight: bold;
+    padding: 12px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #d35400;
+    transition: all 0.1s ease;
+}
+
+/* Klick-Effekt für den Button */
+.menu-button:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #d35400;
+}
+
+/* Hover-Effekt */
+.menu-button:hover {
+    background: #f39c12;
+}
+
+/* --- KEYFRAMES FÜR DEN BUTTON --- */
+@keyframes button-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.03); box-shadow: 0 4px 15px rgba(241, 196, 15, 0.4), 0 4px 0 #d35400; }
+    100% { transform: scale(1); }
+}
+
+/* Dem Button die Animation standardmäßig zuweisen */
+#btn-heli-shop {
+    animation: button-pulse 2s ease-in-out infinite;
+}

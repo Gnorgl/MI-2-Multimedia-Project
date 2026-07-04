@@ -6,6 +6,12 @@ class GameScene extends Phaser.Scene {
         this.cursors = null;
         this.leftKey = null;
         this.rightKey = null;
+        
+        // Tasten für Fähigkeiten
+        this.keyQ = null;
+        this.keyW = null;
+        this.keyE = null;
+
         this.walls = null;
         this.highestGeneratedY = 840; 
         this.wallBlockHeight = 40; 
@@ -22,25 +28,40 @@ class GameScene extends Phaser.Scene {
         this.lavaCurrentY = 1200;       
         this.maxLavaDistance = 550; 
 
-        // Im constructor() ersetzen/ergänzen:
         this.survivors = null;
-        this.rescuedCount = 0;    // Personen in der aktuellen Runde (Highscore)
+        this.rescuedCount = 0; 
         this.rescueChance = 0.50; 
 
-        // NEU: Permanentes Münzkonto aus dem localStorage laden (Standard: 0)
+        // Münzkonto
         this.totalCoins = parseInt(localStorage.getItem('heli_total_coins')) || 0;
-        console.log("Spielstand geladen. Münzen insgesamt:", this.totalCoins);
+
+        // --- AKTIVE FÄHIGKEITEN STATE ---
+        this.hasShield = false;       // Q: Schild aktiv? (Hält bis Einschlag)
+        this.isPhasing = false;       // W: Phase aktiv? (Temporär durch Wände fliegen)
+        this.isGrowthActive = false;  // E: Personen-Wachstum aktiv?
+
+        // Item-Kosten (Später im Shop anpassbar)
+        this.itemCosts = {
+            shield: 15,
+            phase: 25,
+            growth: 20
+        };
 
         this.isBouncing = false; 
         this.bounceTimer = 0;   
 
+        // Erweiterte Heli-Settings für spätere Shop-Heli-Varianten
+        // In GameScene.js -> constructor() anpassen:
         this.heliSettings = {
             startSpeedX: 120,
             maxSpeedX: 280,
             maxSpeedY: 400,
             liftPower: -350,
             accelerationX: 400,
-            dragX: 300
+            dragX: 300,
+            
+            phaseDuration: 5000,   // NEU: Jetzt 5 Sekunden statt 3 Sekunden
+            growthDuration: 6000   // Bleibt bei 6 Sekunden
         };
     }
 
@@ -59,21 +80,19 @@ class GameScene extends Phaser.Scene {
         wallCtx.fillRect(0, 0, 40, this.wallBlockHeight);
         wallCanvas.refresh();
 
-        // TYPE 1: Gleichseitiges Viereck
+        // Hindernisse
         let sqCanvas = this.textures.createCanvas('block_square', 120, 120);
         let sqCtx = sqCanvas.context;
         sqCtx.fillStyle = '#0055ff';
         sqCtx.fillRect(0, 0, 120, 120);
         sqCanvas.refresh();
 
-        // TYPE 2: Senkrechtes Rechteck
         let rectCanvas = this.textures.createCanvas('block_rect', 80, 180);
         let rectCtx = rectCanvas.context;
         rectCtx.fillStyle = '#ffaa00';
         rectCtx.fillRect(0, 0, 80, 180);
         rectCanvas.refresh();
 
-        // TYPE 3: Dreieck
         let triCanvas = this.textures.createCanvas('block_triangle', 120, 120);
         let triCtx = triCanvas.context;
         triCtx.fillStyle = '#ff3333';
@@ -85,74 +104,67 @@ class GameScene extends Phaser.Scene {
         triCtx.fill();
         triCanvas.refresh();
 
-        // Fliegender Querbalken
         let horizCanvas = this.textures.createCanvas('block_horizontal', 160, 40);
         let horizCtx = horizCanvas.context;
         horizCtx.fillStyle = '#9900ff';
         horizCtx.fillRect(0, 0, 160, 40);
         horizCanvas.refresh();
 
-        // Rakete
         let rocketCanvas = this.textures.createCanvas('block_rocket', 30, 80);
         let rocketCtx = rocketCanvas.context;
         rocketCtx.fillStyle = '#00ffcc';
         rocketCtx.fillRect(0, 0, 30, 80);
         rocketCanvas.refresh();
 
-        // NEU: Person (kleines, senkrechtes Rechteck, z.B. weiß/hellgrau)
-        // ERHÖHT: Person ist jetzt größer (20x40 Pixel statt 12x24)
+        // Person (Vergrößert auf 20x40 Pixel)
         let personCanvas = this.textures.createCanvas('person_placeholder', 20, 40);
         let personCtx = personCanvas.context;
         personCtx.fillStyle = '#e0e0e0';
         personCtx.fillRect(0, 0, 20, 40);
-        canvas.refresh(); // Falls du refresh() nutzt, sonst personCanvas.refresh();
         personCanvas.refresh();
     }
 
     create() {
-        // --- 1. WELTGRENZEN ---
         this.physics.world.setBounds(0, -999999, 800, 999999 + 800); 
 
-        // --- 2. HINDERNIS- & RETTUNGS-GRUPPEN ---
         this.hazards = this.physics.add.staticGroup();
         this.platforms = this.physics.add.staticGroup();
         this.flyingHazards = this.physics.add.group({ allowGravity: false });
-        
-        // NEU: Statische Gruppe für die zu rettenden Personen
         this.survivors = this.physics.add.staticGroup();
-
-        // --- 3. WÄNDE INITIALISIEREN ---
         this.walls = this.physics.add.staticGroup();
 
-        // --- 4. HELIKOPTER ERZEUGEN ---
         this.player = this.physics.add.sprite(400, 785, 'heli_placeholder'); 
         this.player.setCollideWorldBounds(true, 0, 0, true);
         this.player.setBounce(1, 0);
 
-        // --- 5. LAVA GRAFIK ERZEUGEN ---
         this.lavaGraphics = this.add.graphics();
         this.lavaGraphics.setDepth(100); 
 
-        // --- 6. KOLLISIONEN & STEUERUNG ---
+        // --- COLLIDER & OVERLAPS ---
         this.physics.add.collider(this.player, this.walls, this.handleWallCollision, null, this);
         
-        this.physics.add.overlap(this.player, this.hazards, this.resetGameManual, null, this);
-        this.physics.add.overlap(this.player, this.flyingHazards, this.resetGameManual, null, this);
+        this.physics.add.overlap(this.player, this.hazards, this.handleHazardCollision, null, this);
+        this.physics.add.overlap(this.player, this.flyingHazards, this.handleHazardCollision, null, this);
 
         this.physics.add.collider(this.player, this.platforms, (player, platform) => {
+            if (this.isPhasing) return; 
             if (!player.body.touching.down && !player.body.blocked.down) {
-                this.resetGameManual();
+                this.handleHazardCollision();
             }
         }, null, this);
 
-        // NEU: Overlap für das Einsammeln der Personen im haarscharfen Vorbeiflug
         this.physics.add.overlap(this.player, this.survivors, this.collectPerson, null, this);
 
+        // STEUERUNG KEYS
         this.cursors = this.input.keyboard.createCursorKeys();
         this.leftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
         this.rightKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
 
-        // --- 7. KAMERA-EINSTELLUNGEN ---
+        // FÄHIGKEITEN KEYS (Q, W, E)
+        this.keyQ = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
+        this.keyW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
+        this.keyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+
         this.cameras.main.startFollow(this.player, true, 0, 1, 0, 200);
         this.cameras.main.setBounds(0, -999999, 800, 999999 + 800);
     }
@@ -165,6 +177,11 @@ class GameScene extends Phaser.Scene {
             this.resetGameManual(); 
             return;
         }
+
+        // Tasten-Abfragen für Fähigkeiten-Aktivierung während des Flugs
+        if (Phaser.Input.Keyboard.JustDown(this.keyQ)) { this.activateShield(); }
+        if (Phaser.Input.Keyboard.JustDown(this.keyW)) { this.activatePhase(); }
+        if (Phaser.Input.Keyboard.JustDown(this.keyE)) { this.activateGrowth(); }
 
         let anyKeyDown = this.cursors.left.isDown || this.leftKey.isDown || 
                           this.cursors.right.isDown || this.rightKey.isDown;
@@ -179,9 +196,6 @@ class GameScene extends Phaser.Scene {
         this.generateWalls();
         this.generateHazards();
         this.handleFlyingHazards(delta, cameraTop, cameraBottom);
-        
-        // ... (Dein bestehender Code in update) ...
-        
         this.handleLava(delta, cameraBottom);
 
         // Prüft, ob der Spieler die Lava berührt
@@ -190,11 +204,10 @@ class GameScene extends Phaser.Scene {
             return;
         }
 
-        // NEU: Prüft, ob die Lava eine zu rettende Person verschlingt
+        // Prüft, ob die Lava eine Person verschlingt
         let lavaSwallowedSomeone = false;
         this.survivors.children.iterate((person) => {
             if (person && person.active) {
-                // Da Y nach unten hin größer wird: Wenn person.y >= lavaCurrentY, steht sie in der Lava
                 if (person.y >= this.lavaCurrentY) {
                     lavaSwallowedSomeone = true;
                 }
@@ -207,16 +220,10 @@ class GameScene extends Phaser.Scene {
             return;
         }
 
-        // ... (Der Rest deiner update-Methode mit dem bounceTimer-Check etc.) ...
-
-        
-
         if (this.bounceTimer > 0) {
             this.bounceTimer -= delta;
-            
             let leftPressed = this.cursors.left.isDown || this.leftKey.isDown;
             let rightPressed = this.cursors.right.isDown || this.rightKey.isDown;
-            
             if (!leftPressed && !rightPressed) {
                 this.player.setVelocityY(Math.abs(this.heliSettings.liftPower));
             } else {
@@ -271,7 +278,6 @@ class GameScene extends Phaser.Scene {
         }
 
         this.lavaGraphics.clear();
-        
         if (this.lavaCurrentY < cameraBottom + 100) {
             this.lavaGraphics.fillStyle(0xff2200, 1.0);
             let height = cameraBottom - this.lavaCurrentY + 200;
@@ -279,15 +285,106 @@ class GameScene extends Phaser.Scene {
         }
     }
 
-    // NEU: Methode zum Einsammeln einer Person bei Berührung
+    // --- FÄHIGKEITEN LOGIK-METHODEN ---
+    activateShield() {
+        if (this.hasShield || this.totalCoins < this.itemCosts.shield) return;
+        
+        this.totalCoins -= this.itemCosts.shield;
+        this.hasShield = true;
+        this.updateCoinDisplayHTML();
+        this.player.setTint(0x00aaff);
+        
+        // HTML-Keyframe-Leuchten aktivieren
+        document.getElementById('card-shield')?.classList.add('active-item');
+        console.log("Schild gekauft & aktiviert!");
+    }
+
+    activatePhase() {
+        if (this.isPhasing || this.totalCoins < this.itemCosts.phase) return;
+
+        this.totalCoins -= this.itemCosts.phase;
+        this.isPhasing = true;
+        this.updateCoinDisplayHTML();
+        this.player.setAlpha(0.4);
+        
+        // HTML-Keyframe-Leuchten aktivieren
+        document.getElementById('card-phase')?.classList.add('active-item');
+        console.log("Phase-Modus gekauft!");
+
+        this.time.delayedCall(this.heliSettings.phaseDuration, () => {
+            this.isPhasing = false;
+            if (!this.hasShield) this.player.clearTint();
+            this.player.setAlpha(1.0);
+            
+            // HTML-Leuchten wieder entfernen
+            document.getElementById('card-phase')?.classList.remove('active-item');
+            console.log("Phase-Modus beendet!");
+        });
+    }
+
+    activateGrowth() {
+        if (this.isGrowthActive || this.totalCoins < this.itemCosts.growth) return;
+
+        this.totalCoins -= this.itemCosts.growth;
+        this.isGrowthActive = true;
+        this.updateCoinDisplayHTML();
+        
+        // HTML-Keyframe-Leuchten aktivieren
+        document.getElementById('card-growth')?.classList.add('active-item');
+        console.log("Riesen-Wachstum aktiviert!");
+
+        this.survivors.children.iterate((person) => {
+            if (person && person.active) {
+                person.setScale(2);
+                person.refreshBody();
+            }
+        });
+
+        this.time.delayedCall(this.heliSettings.growthDuration, () => {
+            this.isGrowthActive = false;
+            
+            // HTML-Leuchten wieder entfernen
+            document.getElementById('card-growth')?.classList.remove('active-item');
+            console.log("Wachstum abgelaufen!");
+            
+            this.survivors.children.iterate((person) => {
+                if (person && person.active) {
+                    person.setScale(1);
+                    person.refreshBody();
+                }
+            });
+        });
+    }
+
+    handleHazardCollision() {
+        if (this.isPhasing) return; 
+
+        if (this.hasShield) {
+            this.hasShield = false;
+            this.player.clearTint(); 
+            console.log("Schild zerstört!");
+            
+            // HIER EINSETZEN: HTML-Keyframe-Leuchten beim Schildbruch entfernen
+            document.getElementById('card-shield')?.classList.remove('active-item');
+            
+            this.isPhasing = true;
+            this.player.setAlpha(0.6);
+            this.time.delayedCall(500, () => {
+                this.isPhasing = false;
+                this.player.setAlpha(1.0);
+            });
+            return;
+        }
+
+        this.resetGameManual();
+    }
+
     collectPerson(player, person) {
         this.survivors.killAndHide(person);
-        person.body.enable = false; // Physischen Körper abschalten
+        person.body.enable = false; 
         
         this.rescuedCount += 1;
-        console.log("Person gerettet! Runden-Konto:", this.rescuedCount);
-
-        // NEU: Live-Anzeige im HTML aktualisieren
+        
         let currentDisplay = document.querySelector('.current-rescue-display');
         if (currentDisplay) {
             currentDisplay.innerHTML = String(this.rescuedCount).padStart(4, '0') + ' <span class="walker-icon">🚶</span>';
@@ -296,7 +393,6 @@ class GameScene extends Phaser.Scene {
 
     generateHazards() {
         let targetY = this.player.y - 1000;
-
         while (this.highestGeneratedHazardY > targetY) {
             this.highestGeneratedHazardY -= this.hazardIntervalY;
 
@@ -304,7 +400,6 @@ class GameScene extends Phaser.Scene {
             let blockType = Phaser.Math.Between(0, 2);
             let block = null;
 
-            // 1. Das eigentliche Hindernis erstellen
             if (blockType === 0) {
                 block = this.platforms.create(randomX, this.highestGeneratedHazardY, 'block_square');
                 block.refreshBody();
@@ -316,65 +411,52 @@ class GameScene extends Phaser.Scene {
                 block.refreshBody();
             }
 
-            // Würfeln, ob auf diesem Hindernis eine Person spawnt
             if (Math.random() < this.rescueChance) {
                 let personX = randomX;
                 let personY = this.highestGeneratedHazardY;
 
-                // Berechne die exakte Oberkante/Spitze basierend auf der Form des Objekts
-                if (blockType === 0) {
-                    // Quadrat (120x120) -> Oberkante ist MitteY - 60, abzüglich halbe Personenhöhe (20)
-                    personY = this.highestGeneratedHazardY - 60 - 20;
-                } else if (blockType === 1) {
-                    // Rechteck/Turm (80x180) -> Oberkante ist MitteY - 90, abzüglich halbe Personenhöhe (20)
-                    personY = this.highestGeneratedHazardY - 90 - 20;
-                } else {
-                    // Dreieck (120x120) -> Die Spitze oben ist exakt bei MitteY - 60, abzüglich halbe Personenhöhe (20)
-                    personY = this.highestGeneratedHazardY - 60 - 20;
-                }
+                // Höhenberechnung angepasst an die neue Personengröße (Halbe Höhe = 20)
+                if (blockType === 0) personY = this.highestGeneratedHazardY - 60 - 20;
+                else if (blockType === 1) personY = this.highestGeneratedHazardY - 90 - 20;
+                else personY = this.highestGeneratedHazardY - 60 - 20;
 
                 let person = this.survivors.create(personX, personY, 'person_placeholder');
+                
+                // Falls das Item aktiv ist, direkt vergrößert spawnen
+                if (this.isGrowthActive) {
+                    person.setScale(2);
+                }
+                
                 person.refreshBody();
             }
         }
-
         this.clearOldObjectsFromGroup(this.hazards);
         this.clearOldObjectsFromGroup(this.platforms);
-        
-        // NEU: Auch alte Personen, die weit unter dem Bildschirm liegen, sauber weglöschen
         this.clearOldObjectsFromGroup(this.survivors);
     }
 
     handleFlyingHazards(delta, cameraTop, cameraBottom) {
         this.flyingHazardTimer += delta;
-
         if (this.flyingHazardTimer >= this.flyingHazardInterval && this.player.y < 600) {
             this.flyingHazardTimer = 0;
-
             if (Phaser.Math.Between(0, 1) === 1) {
                 let isRocket = Phaser.Math.Between(0, 1) === 1;
-
                 if (isRocket) {
                     let spawnX = Phaser.Math.Between(150, 650); 
                     let spawnY = cameraBottom + 50; 
-                    
                     let rocket = this.flyingHazards.create(spawnX, spawnY, 'block_rocket');
-                    
                     let rocketSpeed = -(this.heliSettings.maxSpeedY + 150);
                     rocket.setVelocityY(rocketSpeed);
                 } else {
                     let fromLeft = Phaser.Math.Between(0, 1) === 1;
                     let spawnX = fromLeft ? -200 : 1000;
                     let spawnY = Phaser.Math.Between(cameraTop - 50, cameraTop + 250);
-
                     let bar = this.flyingHazards.create(spawnX, spawnY, 'block_horizontal');
-                    
                     let speedX = Phaser.Math.Between(150, 250);
                     bar.setVelocityX(fromLeft ? speedX : -speedX);
                 }
             }
         }
-
         this.flyingHazards.children.iterate((child) => {
             if (child) {
                 if (child.texture.key === 'block_rocket' && child.y < cameraTop - 100) {
@@ -403,70 +485,64 @@ class GameScene extends Phaser.Scene {
     }
 
     resetGameManual() {
-        // NEU: Payday! Abrechnung vor dem Reset
         if (this.rescuedCount > 0) {
-            let coinsEarned = this.rescuedCount * 3;
+            let coinsEarned = this.rescuedCount * 2; // Faktor auf 2 reduziert
             this.totalCoins += coinsEarned;
-            
-            // Dauerhaft im Browser speichern
             localStorage.setItem('heli_total_coins', this.totalCoins);
             
             console.log(`--- RUNDEN-ABRECHNUNG ---`);
-            console.log(`Personen gerettet: ${this.rescuedCount}`);
-            console.log(`Münzen verdient (+3x): ${coinsEarned}`);
-            console.log(`Münzen Gesamtstand: ${this.totalCoins}`);
-            
-            // Highscore-HTML aktualisieren (Nutzt jetzt die Personenanzahl!)
             this.updateHighScoreHTML(this.rescuedCount);
-
-            // HIER EINSETZEN: Münz-HTML auf der rechten Seite direkt aktualisieren!
-            let coinElement = document.querySelector('.coin-display');
-            if (coinElement) {
-                coinElement.innerText = String(this.totalCoins).padStart(4, '0');
-            }
+            this.updateCoinDisplayHTML();
         }
 
-        // Ab hier folgt dein normaler Reset-Code...
+        // Fähigkeiten-Zustände zurücksetzen
+        this.hasShield = false;
+        this.isPhasing = false;
+        this.isGrowthActive = false;
+        this.player.clearTint();
+        this.player.setAlpha(1.0);
+
+        // HIER EINSETZEN: Alle HTML-Leuchteffekte beim Game Over komplett entfernen
+        document.getElementById('card-shield')?.classList.remove('active-item');
+        document.getElementById('card-phase')?.classList.remove('active-item');
+        document.getElementById('card-growth')?.classList.remove('active-item');
+
         this.player.setPosition(400, 785);
         this.player.setVelocity(0, 0);
         this.player.setAcceleration(0, 0);
         
         this.walls.clear(true, true);
         this.highestGeneratedY = 840;
-
         this.hazards.clear(true, true);
         this.platforms.clear(true, true);
         this.highestGeneratedHazardY = 800;
-
         this.flyingHazards.clear(true, true);
         this.flyingHazardTimer = 0;
-
         this.survivors.clear(true, true);
         
-        // Wichtig: Runden-Zähler erst NACH der Abrechnung nullen!
         this.rescuedCount = 0;
-
         this.lavaStarted = false;
         this.lavaTriggered = false;
         this.lavaCurrentY = 1200;
         this.lavaGraphics.clear();
-
         this.bounceTimer = 0;
         this.cameras.main.scrollY = 0;
 
-        // ... (Dein restlicher Reset-Code am Ende von resetGameManual) ...
-        this.bounceTimer = 0;
-        this.cameras.main.scrollY = 0;
-
-        // NEU: Live-Anzeige beim Game Over wieder auf 0000 zurücksetzen
         let currentDisplay = document.querySelector('.current-rescue-display');
         if (currentDisplay) {
             currentDisplay.innerHTML = '0000 <span class="walker-icon">🚶</span>';
         }
     }
 
+    updateCoinDisplayHTML() {
+        let coinElement = document.querySelector('.coin-display');
+        if (coinElement) {
+            coinElement.innerText = String(this.totalCoins).padStart(4, '0');
+        }
+        localStorage.setItem('heli_total_coins', this.totalCoins);
+    }
+
     updateHighScoreHTML(newScore) {
-        // Speichert die höchste Anzahl geretteter Personen
         let highScore = localStorage.getItem('heli_people_highscore') || 0;
         if (newScore > highScore) {
             highScore = newScore;
@@ -478,19 +554,15 @@ class GameScene extends Phaser.Scene {
 
     generateWalls() {
         let targetY = this.player.y - 1000;
-
         while (this.highestGeneratedY > targetY) {
             this.highestGeneratedY -= this.wallBlockHeight;
-
             let leftWall = this.walls.create(20, this.highestGeneratedY, 'wall_placeholder');
             leftWall.setVisible(false); 
             leftWall.refreshBody();
-
             let rightWall = this.walls.create(780, this.highestGeneratedY, 'wall_placeholder');
             rightWall.setVisible(false); 
             rightWall.refreshBody();
         }
-
         this.walls.children.iterate((child) => {
             if (child && child.y > this.player.y + 1000) {
                 this.walls.killAndHide(child);
@@ -500,15 +572,13 @@ class GameScene extends Phaser.Scene {
     }
 
     handleWallCollision(player, wall) {
+        if (this.isPhasing) return; 
         if (this.bounceTimer > 0) return;
         this.bounceTimer = 200;
         let bounceSpeedX = this.heliSettings.maxSpeedX * 0.9;
         let currentVelocityY = player.body.velocity.y;
 
-        if (player.x < 400) {
-            player.setVelocity(bounceSpeedX, currentVelocityY);
-        } else {
-            player.setVelocity(-bounceSpeedX, currentVelocityY);
-        }
+        if (player.x < 400) player.setVelocity(bounceSpeedX, currentVelocityY);
+        else player.setVelocity(-bounceSpeedX, currentVelocityY);
     }
 }
