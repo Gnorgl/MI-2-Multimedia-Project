@@ -1,11 +1,26 @@
-/* Grundaufbau der Seite mit einem coolen radialen Verlauf */
+/* ==========================================================================
+   1. MINIMALISTISCHER DINO-GRUNDAUFBAU
+   ========================================================================== */
+
 body {
     margin: 0;
     padding: 0;
-    background: radial-gradient(circle, #2c3e50 0%, #0f171e 100%);
-    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    color: #ecf0f1;
+    background-color: #f7f7f7; /* Originaler Chrome Dino Hintergrund */
+    font-family: 'Press Start 2P', monospace; /* Verpixelte Retro-Schrift */
+    color: #535353; /* Originales Dino-Dunkelgrau */
     overflow: hidden;
+}
+
+/* Der Titel oben links im puren Minimalismus */
+.game-logo {
+    position: absolute;
+    top: 30px;
+    left: 40px;
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #535353;
+    letter-spacing: 2px;
 }
 
 /* Haupt-Layout-Gitter */
@@ -20,232 +35,426 @@ body {
     gap: 40px;
 }
 
-/* Der Kasten für das Phaser-Spiel */
+/* Der Kasten für das Phaser-Spiel (Purer Minimalismus ohne störende Ränder oder Schatten) */
 #game-container {
-    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(52, 152, 219, 0.2);
-    border-radius: 12px;
     overflow: hidden;
     max-height: 90vh; 
-    aspect-ratio: 600 / 800;
+    aspect-ratio: 600 / 800; /* Behält dein gewohntes Bildverhältnis perfekt bei */
+    /* box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); <- Diese Zeile entfernen */
     transition: transform 0.3s ease;
 }
 
-/* Schicker "Glassmorphism"-Look für die Seiten-Panels */
+/* Hilfsklasse zum sauberen Verbergen von Elementen */
+.hidden {
+    display: none !important;
+}
+
+
+/* ==========================================================================
+   2. SEITEN-PANELS (LINKS KOMPAKT, RECHTS FREISTEHENDE & ZENTRIERTE BOXEN)
+   ========================================================================== */
+
 .side-panel {
-    width: 260px;
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    padding: 30px;
-    border-radius: 16px;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    text-align: center;
+    width: 280px;
+    min-width: 280px;     /* Beide Bereiche bleiben exakt gleich breit */
+    max-width: 280px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+/* LINKES PANEL: Behält seinen Kasten-Look und passt sich dem Inhalt an */
+.left-panel {
+    background: #ffffff;
+    border: 3px solid #535353;
+    padding: 25px 20px;
+    border-radius: 8px;
+    height: fit-content;
+}
+
+/* RECHTES PANEL: Keine Außenumrandung – Boxen schweben vollkommen zentriert im Raum */
+.right-panel {
+    height: 90vh;         /* Nutzt weiterhin die volle Höhe des Spiels */
+    background: transparent; 
+    border: none;         
+    padding: 0;           
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Setzt die gesamte Gruppe absolut vertikal mittig */
+    gap: 20px;            /* Knackiger, gleichmäßiger Abstand zwischen den Boxen und dem Button */
 }
 
 .side-panel h2 {
     margin-top: 0;
-    color: #f1c40f; 
-    font-size: 1.4rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    border-bottom: 2px solid rgba(241, 196, 15, 0.3);
+    color: #535353; 
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    border-bottom: 3px dashed #535353;
     padding-bottom: 12px;
     margin-bottom: 20px;
 }
 
-/* Styling für die Steuerungs-Anleitung (sieht jetzt aus wie echte Tasten) */
-.control-box {
-    background: rgba(0, 0, 0, 0.3);
-    padding: 12px;
-    margin: 15px 0;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    color: #bdc3c7;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+/* Zentrierung des Abilities-Schriftzugs im linken Panel */
+.left-panel h2 {
+    text-align: center;
+    width: 100%;
+    margin-bottom: 20px; /* Optional: etwas Abstand zum Shop-Container */
 }
 
-/* Tastatur-Key-Effekt */
-.control-box strong {
-    display: inline-block;
-    background: #ecf0f1;
-    color: #2c3e50;
-    padding: 2px 8px;
-    border-radius: 4px;
-    box-shadow: 0 3px 0 #bdc3c7;
-    margin: 0 3px;
-    font-family: monospace;
+
+/* ==========================================================================
+   3. DIGITAL-ANZEIGEN (RECHTS - FREISTEHENDE & KOMPAKTE BOXEN)
+   ========================================================================== */
+
+/* Der Hauptcontainer für die Live-Statistiken */
+#stats-view {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;            
+    flex-grow: 0;         
+    margin-bottom: 0; 
 }
 
-.story-text {
-    font-size: 0.85rem;
-    line-height: 1.5;
-    color: #95a5a6;
-    margin-top: 20px;
+/* Jede Statistik bekommt ihre eigene, freistehende weiße Box */
+.stat-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff; 
+    border: 3px solid #535353;
+    border-radius: 6px;
+    padding: 22px 10px;  
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03); 
+    box-sizing: border-box;
+    width: 100%;
 }
 
-/* Digitale Highscore-Anzeige */
-.score-display {
-    font-size: 3rem;
+/* Die h2-Überschriften innerhalb des Stats-Views (Ohne Trennlinien) */
+.stat-box h2 {
+    margin: 0 0 12px 0;
+    padding: 0;
+    border: none;        
+    border-bottom: none; 
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+}
+
+/* Die reinen Zahlen-Anzeigen */
+.score-display, 
+.current-rescue-display, 
+.coin-display {
+    font-size: 1.5rem;
     font-weight: bold;
-    color: #2ecc71;
-    font-family: 'Courier New', Courier, monospace;
-    text-shadow: 0 0 15px rgba(46, 204, 113, 0.4);
-    margin: 25px 0;
+    color: #535353;
+    margin: 0;
 }
 
-/* Live-Zähler für die geretteten Personen in der aktuellen Runde (Helles Cyan) */
-.current-rescue-display {
-    font-size: 3rem;
-    font-weight: bold;
-    color: #3498db;
-    font-family: 'Courier New', Courier, monospace;
-    text-shadow: 0 0 15px rgba(52, 152, 219, 0.4);
-    margin: 25px 0;
-}
-
-/* Das kleine Icon/Emoji daneben dezent verkleinern */
+/* Styling für das Google Font Icon neben dem Counter */
 .walker-icon {
-    font-size: 2.2rem;
+    font-size: 1.6rem;
     vertical-align: middle;
     margin-left: 5px;
 }
 
-/* Digitale Münzen-Gesamtanzeige (Schickes Gold-Leuchten) */
-.coin-display {
-    font-size: 3rem;
-    font-weight: bold;
-    color: #f1c40f;
-    font-family: 'Courier New', Courier, monospace;
-    text-shadow: 0 0 15px rgba(241, 196, 15, 0.4);
-    margin: 25px 0;
-}
 
-.shop-preview {
-    font-style: italic;
-    color: #7f8c8d;
-    font-size: 0.9rem;
-}
+/* ==========================================================================
+   4. FÄHIGKEITEN-KARTEN (LINKS)
+   ========================================================================== */
 
-/* Responsive Design */
-@media (max-width: 1200px) {
-    .side-panel {
-        display: none;
-    }
-}
-
-/* Shop Container & Karten-Design */
 .shop-container {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
     margin-top: 15px;
 }
 
 .shop-card {
     display: flex;
     align-items: center;
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
+    background: #f7f7f7;
+    border: 3px solid #535353;
+    border-radius: 6px;
     padding: 10px;
     text-align: left;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
 }
 
-/* Die Buchstabentaste (Q, W, E) auf der Karte */
+/* Das Tastatur-Quadrat (Q, W, E) */
 .card-key {
-    background: #ecf0f1;
-    color: #2c3e50;
+    background: #535353;
+    color: #f7f7f7;
     font-weight: bold;
-    font-family: monospace;
-    padding: 4px 10px;
+    padding: 6px 10px;
     border-radius: 4px;
-    box-shadow: 0 2px 0 #bdc3c7;
     margin-right: 12px;
-    font-size: 1rem;
+    font-size: 0.8rem;
+}
+
+/* Neuer Flex-Wrapper, um Icon und Text links nebeneinanderzureihen */
+.card-info-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Styling für das Icon auf der linken Fähigkeiten-Seite */
+.ability-card-icon {
+    font-size: 1.2rem;
+    color: #535353;
 }
 
 .card-info {
     display: flex;
     flex-direction: column;
+    gap: 4px;
 }
 
 .card-title {
-    font-size: 0.95rem;
+    font-size: 0.65rem;
     font-weight: bold;
-    color: #ecf0f1;
+    color: #535353;
 }
 
 .card-cost {
-    font-size: 0.8rem;
-    color: #f1c40f;
+    font-size: 0.55rem;
+    color: #888888;
 }
 
-/* --- HIER SIND DIE GEFORDERTEN KEYFRAMES --- */
-@keyframes active-glow {
-    0% {
-        box-shadow: 0 0 5px rgba(52, 152, 219, 0.5), inset 0 0 5px rgba(52, 152, 219, 0.2);
-        border-color: rgba(52, 152, 219, 0.6);
-    }
-    50% {
-        box-shadow: 0 0 20px rgba(52, 152, 219, 0.9), inset 0 0 10px rgba(52, 152, 219, 0.5);
-        border-color: rgba(52, 152, 219, 1);
-        background: rgba(52, 152, 219, 0.15);
-    }
-    100% {
-        box-shadow: 0 0 5px rgba(52, 152, 219, 0.5), inset 0 0 5px rgba(52, 152, 219, 0.2);
-        border-color: rgba(52, 152, 219, 0.6);
-    }
+/* Minimalistischer Blink-Effekt für aktive Fähigkeiten */
+@keyframes active-blink {
+    0%, 100% { border-color: #535353; background: #f7f7f7; }
+    50% { border-color: #888888; background: #e0e0e0; }
 }
 
-/* Diese Klasse wird per JS angehängt, wenn ein Item aktiv ist */
 .shop-card.active-item {
-    animation: active-glow 1.2s ease-in-out infinite;
+    animation: active-blink 0.8s steps(2) infinite; 
 }
-/* Bereich für den Shop-Button unter den Münzen */
+
+
+/* ==========================================================================
+   5. VERTIKALE HUBSCHRAUBER-LISTE (RECHTS BEI SHOP-ANSICHT)
+   ========================================================================== */
+
+#shop-view {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    height: 100%;
+    justify-content: center; 
+}
+
+.vertical-shop-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px; 
+    flex-grow: 0; 
+    overflow-y: auto; 
+    padding-right: 4px;
+}
+
+/* Scrollbar-Styling im Retro-Look */
+.vertical-shop-container::-webkit-scrollbar {
+    width: 4px;
+}
+.vertical-shop-container::-webkit-scrollbar-thumb {
+    background-color: #535353;
+    border-radius: 2px;
+}
+
+/* Einzelner Hubschrauber-Eintrag */
+.heli-item {
+    display: flex;
+    align-items: center;
+    background: #ffffff; 
+    border: 3px solid #535353;
+    border-radius: 6px;
+    padding: 16px 14px; 
+    gap: 16px; 
+    cursor: pointer;
+    transition: background 0.1s ease;
+    position: relative; /* Wichtig für die relative Positionierung der Badges */
+}
+
+.heli-item:hover {
+    background: #eeeeee;
+}
+
+/* Google Icons für die Haupt-Helis */
+.heli-item-icon {
+    font-size: 1.8rem;
+    color: #535353;
+}
+
+.heli-item-info {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    gap: 3px; 
+    flex-grow: 1; /* Schiebt die Badges automatisch ganz nach rechts */
+}
+
+/* Der Preis bzw. OWNED als prominente Hauptzeile ganz oben */
+.heli-item-price-status {
+    font-size: 0.55rem;
+    font-weight: bold;
+    color: #535353;
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+}
+
+/* Extrem kleine Schriftart für die Detailauflistung der Attribute */
+.heli-item-details {
+    font-size: 0.4rem;
+    color: #888888;
+    line-height: 1.2;
+}
+
+/* Container für die Spezial-Fähigkeiten ganz rechts in der Karte */
+.heli-item-badges {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-width: 40px; /* Garantiert, dass die großen Icons stabil stehen */
+}
+
+/* Styling für die Fähigkeits-Icons auf der rechten Seite */
+.heli-badge-icon {
+    font-size: 1.5rem; /* Schön groß und präsent */
+    color: #535353;
+    font-weight: bold;
+}
+
+/* Zustand für gekaufte/aktive Helis */
+.heli-item.owned {
+    background: #e0e0e0;
+}
+.heli-item.owned .heli-item-price-status {
+    color: #535353;
+}
+
+/* Zustand für gesperrte Helis */
+.heli-item.locked {
+    opacity: 0.7;
+}
+
+
+/* ==========================================================================
+   6. SHOP-BUTTON (GANZ UNTEN VERANKERT & VERGROESSERT)
+   ========================================================================== */
+
 .shop-button-area {
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 0;        
+    margin-bottom: 80px;  
+    padding-top: 0;      
+    border-top: none;    
     display: flex;
     justify-content: center;
+    width: 100%;
 }
 
-/* Styling für den Arcade-Button */
+/* Der vergrößerte, blockige Knopf im Arcade-Stil */
 .menu-button {
-    background: #f1c40f;
-    color: #2c3e50;
+    background: #535353;
+    color: #f7f7f7;
     border: none;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 1rem;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.9rem; 
     font-weight: bold;
-    padding: 12px 24px;
-    border-radius: 6px;
+    padding: 16px 24px; 
+    width: 100%; 
+    border-radius: 4px;
     cursor: pointer;
-    box-shadow: 0 4px 0 #d35400;
+    box-shadow: 0 6px 0 #222222; 
     transition: all 0.1s ease;
+    box-sizing: border-box;
 }
 
-/* Klick-Effekt für den Button */
-.menu-button:active {
-    transform: translateY(2px);
-    box-shadow: 0 2px 0 #d35400;
-}
-
-/* Hover-Effekt */
 .menu-button:hover {
-    background: #f39c12;
+    background: #666666;
 }
 
-/* --- KEYFRAMES FÜR DEN BUTTON --- */
-@keyframes button-pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.03); box-shadow: 0 4px 15px rgba(241, 196, 15, 0.4), 0 4px 0 #d35400; }
-    100% { transform: scale(1); }
+.menu-button:active {
+    transform: translateY(6px); 
+    box-shadow: 0 0 0 #222222;
 }
 
-/* Dem Button die Animation standardmäßig zuweisen */
-#btn-heli-shop {
-    animation: button-pulse 2s ease-in-out infinite;
+
+/* ==========================================================================
+   7. RESPONSIVE DESIGN
+   ========================================================================== */
+
+@media (max-width: 1200px) {
+    .side-panel {
+        display: none; 
+    }
+}
+
+/* --- ICON-FÄRBUNG FÜR DIE FÄHIGKEITEN (LINKS) --- */
+
+/* Shield-Icon (Q) -> Hellblau */
+#card-shield .material-symbols-rounded {
+    color: #00d2ff !important;
+    text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+}
+
+/* Growth-Icon (W) -> Grün */
+#card-growth .material-symbols-rounded {
+    color: #00ff66 !important;
+    text-shadow: 0 0 10px rgba(0, 255, 102, 0.5);
+}
+
+/* Phase-Icon (E) -> Lila */
+#card-phase .material-symbols-rounded {
+    color: #cc00ff !important;
+    text-shadow: 0 0 10px rgba(204, 0, 255, 0.5);
+}
+
+
+/* --- SPECIAL-ICON FÜR DEN ULTIMATIVEN HELI (RECHTS) --- */
+
+/* Award Star beim Ultimate Heli -> Rot */
+#shop-heli-6 .heli-badge-icon {
+    color: #ff3333 !important;
+    text-shadow: 0 0 12px rgba(255, 51, 51, 0.6);
+}
+
+/* --- ICON-FÄRBUNG FÜR DIE BADGES IM SHOP (RECHTS) --- */
+
+/* Gemeinsames Styling für alle Badges */
+.heli-badge-icon {
+    font-size: 20px;
+    margin-left: 5px;
+}
+
+/* Shield-Badge -> Hellblau */
+#shop-heli-3 .heli-badge-icon:first-child {
+    color: #00d2ff !important;
+}
+
+/* Growth-Badge -> Grün */
+#shop-heli-4 .heli-badge-icon:first-child {
+    color: #00ff66 !important;
+}
+
+/* Phase-Badge -> Lila */
+#shop-heli-5 .heli-badge-icon:first-child {
+    color: #cc00ff !important;
+}
+
+/* Alle speed_2x Badges -> Gelb */
+.heli-badge-icon[style*="speed_2x"], 
+.heli-badge-icon:contains("speed_2x"), /* Hinweis: CSS kann Text-Content nicht nativ so selektieren, 
+                                        daher nutzen wir eine direktere Methode über die Reihenfolge */
+.heli-item-badges .heli-badge-icon:nth-child(2) {
+    color: #ffd700 !important;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+/* Award Star -> Rot (bleibt wie gewünscht) */
+#shop-heli-6 .heli-badge-icon {
+    color: #ff3333 !important;
+    text-shadow: 0 0 12px rgba(255, 51, 51, 0.6);
 }

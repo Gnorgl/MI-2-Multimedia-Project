@@ -4,58 +4,164 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DON'T CRASH</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    
     <link rel="stylesheet" href="css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.86.0/dist/phaser.min.js"></script>
 </head>
 <body>
 
+    <h1 class="game-logo">DON'T CRASH</h1>
+
     <div class="webpage-layout">
-        
+
         <div class="side-panel left-panel">
-            <h2>Steuerung</h2>
-            <div class="control-box"><strong>A</strong> oder <strong>⬅</strong><br>Links fliegen</div>
-            <div class="control-box"><strong>D</strong> oder <strong>➡</strong><br>Rechts fliegen</div>
-            <p class="story-text">Rette die Wanderer auf den Plattformen und fliehe vor der aufsteigenden Lava and DON'T CRASH</p>
+            <h2>ABILITIES</h2>
+            <div class="shop-container">
+                
+                <div class="shop-card" id="card-shield">
+                    <div class="card-key">Q</div>
+                    <div class="card-info-wrapper">
+                        <span class="material-symbols-rounded ability-card-icon">shield</span>
+                        <div class="card-info">
+                            <span class="card-title">SHIELD</span>
+                            <span class="card-cost">15 COINS</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="shop-card" id="card-growth">
+                    <div class="card-key">W</div>
+                    <div class="card-info-wrapper">
+                        <span class="material-symbols-rounded ability-card-icon">zoom_in</span>
+                        <div class="card-info">
+                            <span class="card-title">GROWTH</span>
+                            <span class="card-cost">20 COINS</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="shop-card" id="card-phase">
+                    <div class="card-key">E</div>
+                    <div class="card-info-wrapper">
+                        <span class="material-symbols-rounded ability-card-icon">landscape_2_off</span>
+                        <div class="card-info">
+                            <span class="card-title">PHASE</span>
+                            <span class="card-cost">25 COINS</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </div>
 
         <div id="game-container"></div>
 
         <div class="side-panel right-panel">
-            <h2>Gerettet (Runde)</h2>
-            <div class="current-rescue-display">0000 <span class="walker-icon">🚶</span></div>
-
-            <h2>Highscore</h2>
-            <div class="score-display">0000</div>
             
-            <h2>Münzen Gesamt</h2>
-            <div class="coin-display">0000</div>
-            
-            <h2>Heli-Shop</h2>
-            <div class="shop-container">
-                <div class="shop-card" id="card-shield">
-                    <div class="card-key">Q</div>
-                    <div class="card-info">
-                        <span class="card-title">Schild</span>
-                        <span class="card-cost">15 Münzen</span>
-                    </div>
+            <div id="stats-view">
+                
+                <div class="stat-box">
+                    <h2>SCORE</h2>
+                    <div class="current-rescue-display">0000</div>
                 </div>
 
-                <div class="shop-card" id="card-phase">
-                    <div class="card-key">W</div>
-                    <div class="card-info">
-                        <span class="card-title">Phase-Modus</span>
-                        <span class="card-cost">25 Münzen</span>
-                    </div>
+                <div class="stat-box">
+                    <h2>HIGHSCORE</h2>
+                    <div class="score-display">0000</div>
+                </div>
+                
+                <div class="stat-box">
+                    <h2>COINS</h2>
+                    <div class="coin-display">0000</div>
                 </div>
 
-                <div class="shop-card" id="card-growth">
-                    <div class="card-key">E</div>
-                    <div class="card-info">
-                        <span class="card-title">Riesen-Wuchs</span>
-                        <span class="card-cost">20 Münzen</span>
+            </div>
+
+            <div id="shop-view" class="hidden">
+                <div class="vertical-shop-container">
+                    
+                    <div class="heli-item owned" id="shop-heli-1">
+                        <span class="material-symbols-rounded heli-item-icon">helicopter</span>
+                        <div class="heli-item-info">
+                            <span class="heli-item-price-status">OWNED</span>
+                            <span class="heli-item-details">SPD: [||---]</span>
+                            <span class="heli-item-details">ACC: [||---]</span>
+                        </div>
                     </div>
+
+                    <div class="heli-item locked" id="shop-heli-2">
+                        <span class="material-symbols-rounded heli-item-icon">helicopter</span>
+                        <div class="heli-item-info">
+                            <span class="heli-item-price-status">50 COINS</span>
+                            <span class="heli-item-details">SPD: [|||--]</span>
+                            <span class="heli-item-details">ACC: [||---]</span>
+                        </div>
+                    </div>
+
+                    <div class="heli-item locked" id="shop-heli-3">
+                        <span class="material-symbols-rounded heli-item-icon">helicopter</span>
+                        <div class="heli-item-info">
+                            <span class="heli-item-price-status">100 COINS</span>
+                            <span class="heli-item-details">SPD: [|||--]</span>
+                            <span class="heli-item-details">ACC: [||||-]</span>
+                        </div>
+                        <div class="heli-item-badges">
+                            <span class="material-symbols-rounded heli-badge-icon">shield</span>
+                            <span class="material-symbols-rounded heli-badge-icon">speed_2x</span>
+                        </div>
+                    </div>
+
+                    <div class="heli-item locked" id="shop-heli-4">
+                        <span class="material-symbols-rounded heli-item-icon">helicopter</span>
+                        <div class="heli-item-info">
+                            <span class="heli-item-price-status">150 COINS</span>
+                            <span class="heli-item-details">SPD: [||||-]</span>
+                            <span class="heli-item-details">ACC: [||||-]</span>
+                        </div>
+                        <div class="heli-item-badges">
+                            <span class="material-symbols-rounded heli-badge-icon">zoom_in</span>
+                            <span class="material-symbols-rounded heli-badge-icon">speed_2x</span>
+                        </div>
+                    </div>
+
+                    <div class="heli-item locked" id="shop-heli-5">
+                        <span class="material-symbols-rounded heli-item-icon">helicopter</span>
+                        <div class="heli-item-info">
+                            <span class="heli-item-price-status">200 COINS</span>
+                            <span class="heli-item-details">SPD: [|||||]</span>
+                            <span class="heli-item-details">ACC: [|||--]</span>
+                        </div>
+                        <div class="heli-item-badges">
+                            <span class="material-symbols-rounded heli-badge-icon">landscape_2_off</span>
+                            <span class="material-symbols-rounded heli-badge-icon">speed_2x</span>
+                        </div>
+                    </div>
+
+                    <div class="heli-item locked" id="shop-heli-6">
+                        <span class="material-symbols-rounded heli-item-icon">helicopter</span>
+                        <div class="heli-item-info">
+                            <span class="heli-item-price-status">300 COINS</span>
+                            <span class="heli-item-details">
+                                SPEED: MAX / LIFT: MAX<br>
+                                PHASE: 7s / GROWTH: 8s
+                            </span>
+                        </div>
+                        <div class="heli-item-badges">
+                            <span class="material-symbols-rounded heli-badge-icon">award_star</span>
+                        </div>
+                    </div>
+
                 </div>
             </div>
+
+            <div class="shop-button-area">
+                <button class="menu-button" id="btn-heli-shop">SHOP</button>
+            </div>
+
         </div>
 
     </div>
@@ -64,3 +170,4 @@
     <script src="js/config.js"></script>
 </body>
 </html>
+

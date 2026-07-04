@@ -37,21 +37,20 @@ class GameScene extends Phaser.Scene {
 
         // --- AKTIVE FÄHIGKEITEN STATE ---
         this.hasShield = false;       // Q: Schild aktiv? (Hält bis Einschlag)
-        this.isPhasing = false;       // W: Phase aktiv? (Temporär durch Wände fliegen)
-        this.isGrowthActive = false;  // E: Personen-Wachstum aktiv?
+        this.isGrowthActive = false;  // W: Personen-Wachstum aktiv?
+        this.isPhasing = false;       // E: Phase aktiv? (Temporär durch Wände fliegen)
 
-        // Item-Kosten (Später im Shop anpassbar)
+        // Item-Kosten
         this.itemCosts = {
             shield: 15,
-            phase: 25,
-            growth: 20
+            growth: 20,
+            phase: 25
         };
 
         this.isBouncing = false; 
         this.bounceTimer = 0;   
 
-        // Erweiterte Heli-Settings für spätere Shop-Heli-Varianten
-        // In GameScene.js -> constructor() anpassen:
+        // Erweiterte Heli-Settings (Standardwerte, werden dynamisch überschrieben)
         this.heliSettings = {
             startSpeedX: 120,
             maxSpeedX: 280,
@@ -59,10 +58,30 @@ class GameScene extends Phaser.Scene {
             liftPower: -350,
             accelerationX: 400,
             dragX: 300,
-            
-            phaseDuration: 5000,   // NEU: Jetzt 5 Sekunden statt 3 Sekunden
-            growthDuration: 6000   // Bleibt bei 6 Sekunden
+            phaseDuration: 5000,
+            growthDuration: 6000
         };
+
+        // Direkt beim Instanziieren die Attribute laden
+        this.loadActiveHeliSettings();
+    }
+
+    // Lädt die spezifischen Attribute des aktuell ausgewählten Hubschraubers aus der Config-Datenbank
+    loadActiveHeliSettings() {
+        const activeId = localStorage.getItem('heli_active_id') || 'shop-heli-1';
+        
+        if (typeof HELI_DATABASE !== 'undefined' && HELI_DATABASE[activeId]) {
+            const newSettings = HELI_DATABASE[activeId].settings;
+            
+            this.heliSettings.startSpeedX = newSettings.startSpeedX;
+            this.heliSettings.maxSpeedX = newSettings.maxSpeedX;
+            this.heliSettings.maxSpeedY = newSettings.maxSpeedY;
+            this.heliSettings.accelerationX = newSettings.accelerationX;
+            this.heliSettings.phaseDuration = newSettings.phaseDuration;
+            this.heliSettings.growthDuration = newSettings.growthDuration;
+            
+            console.log(`Phaser verwendet jetzt Settings für: ${HELI_DATABASE[activeId].name}`, this.heliSettings);
+        }
     }
 
     preload() {
@@ -80,18 +99,18 @@ class GameScene extends Phaser.Scene {
         wallCtx.fillRect(0, 0, 40, this.wallBlockHeight);
         wallCanvas.refresh();
 
-        // Hindernisse
+        // Hindernisse (KORRIGIERT: Jedes Canvas refresht jetzt sich selbst!)
         let sqCanvas = this.textures.createCanvas('block_square', 120, 120);
         let sqCtx = sqCanvas.context;
         sqCtx.fillStyle = '#0055ff';
         sqCtx.fillRect(0, 0, 120, 120);
-        sqCanvas.refresh();
+        sqCanvas.refresh(); // Korrigiert!
 
         let rectCanvas = this.textures.createCanvas('block_rect', 80, 180);
         let rectCtx = rectCanvas.context;
         rectCtx.fillStyle = '#ffaa00';
         rectCtx.fillRect(0, 0, 80, 180);
-        rectCanvas.refresh();
+        rectCanvas.refresh(); // Korrigiert!
 
         let triCanvas = this.textures.createCanvas('block_triangle', 120, 120);
         let triCtx = triCanvas.context;
@@ -102,29 +121,32 @@ class GameScene extends Phaser.Scene {
         triCtx.lineTo(0, 120);    
         triCtx.closePath();
         triCtx.fill();
-        triCanvas.refresh();
+        triCanvas.refresh(); // Korrigiert!
 
         let horizCanvas = this.textures.createCanvas('block_horizontal', 160, 40);
         let horizCtx = horizCanvas.context;
         horizCtx.fillStyle = '#9900ff';
         horizCtx.fillRect(0, 0, 160, 40);
-        horizCanvas.refresh();
+        horizCanvas.refresh(); // Korrigiert!
 
         let rocketCanvas = this.textures.createCanvas('block_rocket', 30, 80);
         let rocketCtx = rocketCanvas.context;
         rocketCtx.fillStyle = '#00ffcc';
         rocketCtx.fillRect(0, 0, 30, 80);
-        rocketCanvas.refresh();
+        rocketCanvas.refresh(); // Korrigiert!
 
-        // Person (Vergrößert auf 20x40 Pixel)
+        // Person (20x40 Pixel)
         let personCanvas = this.textures.createCanvas('person_placeholder', 20, 40);
         let personCtx = personCanvas.context;
         personCtx.fillStyle = '#e0e0e0';
         personCtx.fillRect(0, 0, 20, 40);
-        personCanvas.refresh();
+        personCanvas.refresh(); // Korrigiert!
     }
 
     create() {
+        // Sicherstellen, dass die Attribute vor Rundenstart frisch geladen sind
+        this.loadActiveHeliSettings();
+
         this.physics.world.setBounds(0, -999999, 800, 999999 + 800); 
 
         this.hazards = this.physics.add.staticGroup();
@@ -178,16 +200,23 @@ class GameScene extends Phaser.Scene {
             return;
         }
 
-        // Tasten-Abfragen für Fähigkeiten-Aktivierung während des Flugs
-        if (Phaser.Input.Keyboard.JustDown(this.keyQ)) { this.activateShield(); }
-        if (Phaser.Input.Keyboard.JustDown(this.keyW)) { this.activatePhase(); }
-        if (Phaser.Input.Keyboard.JustDown(this.keyE)) { this.activateGrowth(); }
+        // Tasten-Abfragen für Fähigkeiten-Aktivierung während des Flugs (KORRIGIERTE REIHENFOLGE)
+        if (Phaser.Input.Keyboard.JustDown(this.keyQ)) { this.activateShield(); } // Q = Shield
+        if (Phaser.Input.Keyboard.JustDown(this.keyW)) { this.activateGrowth(); } // W = Growth
+        if (Phaser.Input.Keyboard.JustDown(this.keyE)) { this.activatePhase(); }  // E = Phase
 
         let anyKeyDown = this.cursors.left.isDown || this.leftKey.isDown || 
                           this.cursors.right.isDown || this.rightKey.isDown;
 
+        // Sobald das Spiel startet und abgehoben wird
         if (anyKeyDown && !this.lavaTriggered) {
             this.lavaTriggered = true;
+            
+            // Den Shop im UI sofort sperren
+            if (typeof window.disableShopMenu === 'function') {
+                window.disableShopMenu();
+            }
+
             this.time.delayedCall(1000, () => {
                 this.lavaStarted = true;
             }, [], this);
@@ -285,7 +314,7 @@ class GameScene extends Phaser.Scene {
         }
     }
 
-    // --- FÄHIGKEITEN LOGIK-METHODEN ---
+    // --- FÄHIGKEITEN LOGIK-METHODEN (KORRIGIERT) ---
     activateShield() {
         if (this.hasShield || this.totalCoins < this.itemCosts.shield) return;
         
@@ -294,32 +323,8 @@ class GameScene extends Phaser.Scene {
         this.updateCoinDisplayHTML();
         this.player.setTint(0x00aaff);
         
-        // HTML-Keyframe-Leuchten aktivieren
         document.getElementById('card-shield')?.classList.add('active-item');
         console.log("Schild gekauft & aktiviert!");
-    }
-
-    activatePhase() {
-        if (this.isPhasing || this.totalCoins < this.itemCosts.phase) return;
-
-        this.totalCoins -= this.itemCosts.phase;
-        this.isPhasing = true;
-        this.updateCoinDisplayHTML();
-        this.player.setAlpha(0.4);
-        
-        // HTML-Keyframe-Leuchten aktivieren
-        document.getElementById('card-phase')?.classList.add('active-item');
-        console.log("Phase-Modus gekauft!");
-
-        this.time.delayedCall(this.heliSettings.phaseDuration, () => {
-            this.isPhasing = false;
-            if (!this.hasShield) this.player.clearTint();
-            this.player.setAlpha(1.0);
-            
-            // HTML-Leuchten wieder entfernen
-            document.getElementById('card-phase')?.classList.remove('active-item');
-            console.log("Phase-Modus beendet!");
-        });
     }
 
     activateGrowth() {
@@ -329,7 +334,6 @@ class GameScene extends Phaser.Scene {
         this.isGrowthActive = true;
         this.updateCoinDisplayHTML();
         
-        // HTML-Keyframe-Leuchten aktivieren
         document.getElementById('card-growth')?.classList.add('active-item');
         console.log("Riesen-Wachstum aktiviert!");
 
@@ -343,7 +347,6 @@ class GameScene extends Phaser.Scene {
         this.time.delayedCall(this.heliSettings.growthDuration, () => {
             this.isGrowthActive = false;
             
-            // HTML-Leuchten wieder entfernen
             document.getElementById('card-growth')?.classList.remove('active-item');
             console.log("Wachstum abgelaufen!");
             
@@ -356,6 +359,27 @@ class GameScene extends Phaser.Scene {
         });
     }
 
+    activatePhase() {
+        if (this.isPhasing || this.totalCoins < this.itemCosts.phase) return;
+
+        this.totalCoins -= this.itemCosts.phase;
+        this.isPhasing = true;
+        this.updateCoinDisplayHTML();
+        this.player.setAlpha(0.4);
+        
+        document.getElementById('card-phase')?.classList.add('active-item');
+        console.log("Phase-Modus gekauft!");
+
+        this.time.delayedCall(this.heliSettings.phaseDuration, () => {
+            this.isPhasing = false;
+            if (!this.hasShield) this.player.clearTint();
+            this.player.setAlpha(1.0);
+            
+            document.getElementById('card-phase')?.classList.remove('active-item');
+            console.log("Phase-Modus beendet!");
+        });
+    }
+
     handleHazardCollision() {
         if (this.isPhasing) return; 
 
@@ -364,7 +388,6 @@ class GameScene extends Phaser.Scene {
             this.player.clearTint(); 
             console.log("Schild zerstört!");
             
-            // HIER EINSETZEN: HTML-Keyframe-Leuchten beim Schildbruch entfernen
             document.getElementById('card-shield')?.classList.remove('active-item');
             
             this.isPhasing = true;
@@ -387,7 +410,7 @@ class GameScene extends Phaser.Scene {
         
         let currentDisplay = document.querySelector('.current-rescue-display');
         if (currentDisplay) {
-            currentDisplay.innerHTML = String(this.rescuedCount).padStart(4, '0') + ' <span class="walker-icon">🚶</span>';
+            currentDisplay.innerHTML = String(this.rescuedCount).padStart(4, '0');
         }
     }
 
@@ -415,14 +438,12 @@ class GameScene extends Phaser.Scene {
                 let personX = randomX;
                 let personY = this.highestGeneratedHazardY;
 
-                // Höhenberechnung angepasst an die neue Personengröße (Halbe Höhe = 20)
                 if (blockType === 0) personY = this.highestGeneratedHazardY - 60 - 20;
                 else if (blockType === 1) personY = this.highestGeneratedHazardY - 90 - 20;
                 else personY = this.highestGeneratedHazardY - 60 - 20;
 
                 let person = this.survivors.create(personX, personY, 'person_placeholder');
                 
-                // Falls das Item aktiv ist, direkt vergrößert spawnen
                 if (this.isGrowthActive) {
                     person.setScale(2);
                 }
@@ -485,8 +506,11 @@ class GameScene extends Phaser.Scene {
     }
 
     resetGameManual() {
+        // Frische Hubschrauber-Attribute aus dem Speicher laden (falls im Shop etwas geandert wurde)
+        this.loadActiveHeliSettings();
+
         if (this.rescuedCount > 0) {
-            let coinsEarned = this.rescuedCount * 2; // Faktor auf 2 reduziert
+            let coinsEarned = this.rescuedCount * 2; 
             this.totalCoins += coinsEarned;
             localStorage.setItem('heli_total_coins', this.totalCoins);
             
@@ -502,7 +526,7 @@ class GameScene extends Phaser.Scene {
         this.player.clearTint();
         this.player.setAlpha(1.0);
 
-        // HIER EINSETZEN: Alle HTML-Leuchteffekte beim Game Over komplett entfernen
+        // Alle HTML-Leuchteffekte beim Game Over komplett entfernen
         document.getElementById('card-shield')?.classList.remove('active-item');
         document.getElementById('card-phase')?.classList.remove('active-item');
         document.getElementById('card-growth')?.classList.remove('active-item');
@@ -530,7 +554,12 @@ class GameScene extends Phaser.Scene {
 
         let currentDisplay = document.querySelector('.current-rescue-display');
         if (currentDisplay) {
-            currentDisplay.innerHTML = '0000 <span class="walker-icon">🚶</span>';
+            currentDisplay.innerHTML = '0000';
+        }
+
+        // Am Ende das Shop-Menü im UI wieder freigeben
+        if (typeof window.enableShopMenu === 'function') {
+            window.enableShopMenu();
         }
     }
 
