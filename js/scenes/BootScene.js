@@ -90,7 +90,7 @@ class BootScene extends Phaser.Scene {
     }
 
     createPersonTexture() {
-    const size = 32;
+    const size = 40;
     let canvas = this.textures.createCanvas('person_new', size, size);
     let ctx = canvas.context;
 
