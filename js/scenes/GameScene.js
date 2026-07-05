@@ -84,65 +84,6 @@ class GameScene extends Phaser.Scene {
         }
     }
 
-    preload() {
-        // Helikopter
-        let canvas = this.textures.createCanvas('heli_placeholder', 40, 30);
-        let ctx = canvas.context;
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, 40, 30);
-        canvas.refresh();
-
-        // Wände
-        let wallCanvas = this.textures.createCanvas('wall_placeholder', 40, this.wallBlockHeight);
-        let wallCtx = wallCanvas.context;
-        wallCtx.fillStyle = '#4a3728'; 
-        wallCtx.fillRect(0, 0, 40, this.wallBlockHeight);
-        wallCanvas.refresh();
-
-        // Hindernisse (KORRIGIERT: Jedes Canvas refresht jetzt sich selbst!)
-        let sqCanvas = this.textures.createCanvas('block_square', 120, 120);
-        let sqCtx = sqCanvas.context;
-        sqCtx.fillStyle = '#0055ff';
-        sqCtx.fillRect(0, 0, 120, 120);
-        sqCanvas.refresh(); // Korrigiert!
-
-        let rectCanvas = this.textures.createCanvas('block_rect', 80, 180);
-        let rectCtx = rectCanvas.context;
-        rectCtx.fillStyle = '#ffaa00';
-        rectCtx.fillRect(0, 0, 80, 180);
-        rectCanvas.refresh(); // Korrigiert!
-
-        let triCanvas = this.textures.createCanvas('block_triangle', 120, 120);
-        let triCtx = triCanvas.context;
-        triCtx.fillStyle = '#ff3333';
-        triCtx.beginPath();
-        triCtx.moveTo(60, 0);     
-        triCtx.lineTo(120, 120);  
-        triCtx.lineTo(0, 120);    
-        triCtx.closePath();
-        triCtx.fill();
-        triCanvas.refresh(); // Korrigiert!
-
-        let horizCanvas = this.textures.createCanvas('block_horizontal', 160, 40);
-        let horizCtx = horizCanvas.context;
-        horizCtx.fillStyle = '#9900ff';
-        horizCtx.fillRect(0, 0, 160, 40);
-        horizCanvas.refresh(); // Korrigiert!
-
-        let rocketCanvas = this.textures.createCanvas('block_rocket', 30, 80);
-        let rocketCtx = rocketCanvas.context;
-        rocketCtx.fillStyle = '#00ffcc';
-        rocketCtx.fillRect(0, 0, 30, 80);
-        rocketCanvas.refresh(); // Korrigiert!
-
-        // Person (20x40 Pixel)
-        let personCanvas = this.textures.createCanvas('person_placeholder', 20, 40);
-        let personCtx = personCanvas.context;
-        personCtx.fillStyle = '#e0e0e0';
-        personCtx.fillRect(0, 0, 20, 40);
-        personCanvas.refresh(); // Korrigiert!
-    }
-
     create() {
         // Sicherstellen, dass die Attribute vor Rundenstart frisch geladen sind
         this.loadActiveHeliSettings();

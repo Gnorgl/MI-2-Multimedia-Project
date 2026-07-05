@@ -14,11 +14,11 @@ const HELI_DATABASE = {
     },
     'shop-heli-4': {
         name: 'Growth Specialist', cost: 150,
-        settings: { startSpeedX: 160, maxSpeedX: 360, maxSpeedY: 450, accelerationX: 550, phaseDuration: 5000, growthDuration: 8000 } // Längeres Wachstum
+        settings: { startSpeedX: 160, maxSpeedX: 360, maxSpeedY: 450, accelerationX: 550, phaseDuration: 5000, growthDuration: 8000 }
     },
     'shop-heli-5': {
         name: 'Phase Specialist', cost: 200,
-        settings: { startSpeedX: 180, maxSpeedX: 400, maxSpeedY: 480, accelerationX: 450, phaseDuration: 7000, growthDuration: 6000 } // Längere Phase
+        settings: { startSpeedX: 180, maxSpeedX: 400, maxSpeedY: 480, accelerationX: 450, phaseDuration: 7000, growthDuration: 6000 }
     },
     'shop-heli-6': {
         name: 'Ultimate Upgrade', cost: 300,
@@ -26,6 +26,7 @@ const HELI_DATABASE = {
     }
 };
 
+// Das Konfigurations-Objekt für Phaser
 const config = {
     type: Phaser.AUTO,
     parent: 'game-container', 
@@ -42,13 +43,11 @@ const config = {
             debug: true
         }
     },
-    scene: [GameScene]
+    scene: [BootScene, GameScene] // Szenen-Reihenfolge festgelegt
 };
 
-const game = new Phaser.Game(config);
-
+// UI-Logik für den Shop (wird erst geladen, wenn HTML bereit ist)
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. Highscore & Münzen initial laden
     const savedHighScore = localStorage.getItem('heli_people_highscore') || 0;
     const scoreDisplay = document.querySelector('.score-display');
     if (scoreDisplay) scoreDisplay.innerText = String(savedHighScore).padStart(4, '0');
@@ -57,7 +56,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const coinDisplay = document.querySelector('.coin-display');
     if (coinDisplay) coinDisplay.innerText = String(savedCoins).padStart(4, '0');
 
-    // Speicherstände für Hubschrauber initialisieren
     if (!localStorage.getItem('heli_owned_list')) {
         localStorage.setItem('heli_owned_list', JSON.stringify(['shop-heli-1']));
     }
@@ -69,7 +67,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const shopView = document.getElementById("shop-view");
     const toggleShopBtn = document.getElementById("btn-heli-shop");
 
-    // Funktion zur Aktualisierung der Shop-Karten im HTML
     function updateShopUI() {
         const ownedHelis = JSON.parse(localStorage.getItem('heli_owned_list')) || ['shop-heli-1'];
         const activeHeliId = localStorage.getItem('heli_active_id') || 'shop-heli-1';
@@ -93,17 +90,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (statusTextElement) statusTextElement.innerText = `${HELI_DATABASE[id].cost} COINS`;
             }
         });
-
         if (coinDisplay) coinDisplay.innerText = String(savedCoins).padStart(4, '0');
     }
 
-    // Event-Listener für Klicks auf die Hubschrauber-Karten im Shop
     Object.keys(HELI_DATABASE).forEach(id => {
         const element = document.getElementById(id);
         if (!element) return;
-
         element.addEventListener('click', () => {
-            // Wenn der Button deaktiviert ist, ist das Spiel aktiv -> Klicks im Shop ignorieren!
             if (toggleShopBtn && toggleShopBtn.disabled) return;
 
             let ownedHelis = JSON.parse(localStorage.getItem('heli_owned_list')) || ['shop-heli-1'];
@@ -112,33 +105,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (ownedHelis.includes(id)) {
                 localStorage.setItem('heli_active_id', id);
-                const activeScene = game.scene.getScene('GameScene');
-                if (activeScene && typeof activeScene.loadActiveHeliSettings === 'function') {
-                    activeScene.loadActiveHeliSettings();
-                }
-            } else {
-                if (currentCoins >= heliData.cost) {
-                    currentCoins -= heliData.cost;
-                    localStorage.setItem('heli_total_coins', currentCoins);
-                    ownedHelis.push(id);
-                    localStorage.setItem('heli_owned_list', JSON.stringify(ownedHelis));
-                    localStorage.setItem('heli_active_id', id);
-                    
-                    const activeScene = game.scene.getScene('GameScene');
-                    if (activeScene && typeof activeScene.loadActiveHeliSettings === 'function') {
-                        activeScene.loadActiveHeliSettings();
-                    }
-                }
+            } else if (currentCoins >= heliData.cost) {
+                currentCoins -= heliData.cost;
+                localStorage.setItem('heli_total_coins', currentCoins);
+                ownedHelis.push(id);
+                localStorage.setItem('heli_owned_list', JSON.stringify(ownedHelis));
+                localStorage.setItem('heli_active_id', id);
             }
             updateShopUI();
         });
     });
 
-    // Shop Ansicht umschalten
     if (toggleShopBtn && statsView && shopView) {
         toggleShopBtn.addEventListener("click", () => {
-            if (toggleShopBtn.disabled) return; // Sicherheitsabfrage
-
+            if (toggleShopBtn.disabled) return;
             const isShopHidden = shopView.classList.contains("hidden");
             if (isShopHidden) {
                 statsView.classList.add("hidden");
@@ -147,44 +127,31 @@ document.addEventListener("DOMContentLoaded", () => {
                 updateShopUI();
             } else {
                 shopView.classList.add("hidden");
+                statsView.classList.add("hidden"); // Korrektur: ensure correct toggle logic
                 statsView.classList.remove("hidden");
                 toggleShopBtn.textContent = "SHOP";
             }
         });
     }
 
-    // --- GLOBALE UI-STEUERUNG FÜR DIE GAMESCENE ---
-    
-    // Wird aufgerufen, sobald eine Richtungstaste gedrückt wird
     window.disableShopMenu = function() {
-        if (toggleShopBtn && statsView && shopView) {
-            // Zurück zur Punkteanzeige zwingen
-            shopView.classList.add("hidden");
-            statsView.classList.remove("hidden");
-            
-            // Button sperren und visuell deaktivieren
+        if (toggleShopBtn) {
+            shopView?.classList.add("hidden");
+            statsView?.classList.remove("hidden");
             toggleShopBtn.textContent = "IN FLIGHT";
             toggleShopBtn.disabled = true;
             toggleShopBtn.style.opacity = "0.5";
-            toggleShopBtn.style.cursor = "not-allowed";
-            toggleShopBtn.style.transform = "none"; // Verhindert Klickeffekte
-            toggleShopBtn.style.boxShadow = "none";
         }
     };
 
-    // Wird aufgerufen, wenn resetGameManual() triggert
     window.enableShopMenu = function() {
         if (toggleShopBtn) {
-            // Button wieder freigeben
             toggleShopBtn.textContent = "SHOP";
             toggleShopBtn.disabled = false;
             toggleShopBtn.style.opacity = "1";
-            toggleShopBtn.style.cursor = "pointer";
-            toggleShopBtn.style.boxShadow = "0 6px 0 #222222"; // Retro-Schatten wiederherstellen
         }
         updateShopUI();
     };
 
-    // Initialer Aufruf
     updateShopUI();
 });
