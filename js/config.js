@@ -30,6 +30,7 @@ const HELI_DATABASE = {
 const config = {
     type: Phaser.AUTO,
     parent: 'game-container', 
+    backgroundColor: '#f7f7f7',
     scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,

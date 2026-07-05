@@ -39,8 +39,8 @@ body {
 #game-container {
     overflow: hidden;
     max-height: 90vh; 
-    aspect-ratio: 600 / 800; /* Behält dein gewohntes Bildverhältnis perfekt bei */
-    /* box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); <- Diese Zeile entfernen */
+    aspect-ratio: 600 / 800;
+    background-color: #f7f7f7; /* Gleiche Farbe wie der Body */
     transition: transform 0.3s ease;
 }
 
@@ -225,7 +225,7 @@ body {
 /* Minimalistischer Blink-Effekt für aktive Fähigkeiten */
 @keyframes active-blink {
     0%, 100% { border-color: #535353; background: #f7f7f7; }
-    50% { border-color: #888888; background: #e0e0e0; }
+    50% { border-color: #888888; background: #00e1ff; }
 }
 
 .shop-card.active-item {

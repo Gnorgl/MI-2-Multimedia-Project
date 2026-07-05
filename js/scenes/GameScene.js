@@ -96,7 +96,13 @@ class GameScene extends Phaser.Scene {
         this.survivors = this.physics.add.staticGroup();
         this.walls = this.physics.add.staticGroup();
 
-        this.player = this.physics.add.sprite(400, 785, 'heli_placeholder'); 
+        this.player = this.physics.add.sprite(400, 785, 'heli_placeholder');
+
+        // Setze eine Skalierung, damit es so groß wirkt wie vorher (40x30):
+        this.player.setScale(0.75);
+        this.player.body.setSize(60, 55);
+        this.player.body.setOffset(3, 0);
+
         this.player.setCollideWorldBounds(true, 0, 0, true);
         this.player.setBounce(1, 0);
 
@@ -211,6 +217,7 @@ class GameScene extends Phaser.Scene {
         }
 
         if (this.cursors.left.isDown || this.leftKey.isDown) {
+            this.player.flipX = false;
             if (this.player.body.velocity.x > -this.heliSettings.startSpeedX) {
                 this.player.setVelocityX(-this.heliSettings.startSpeedX);
             }
@@ -218,6 +225,7 @@ class GameScene extends Phaser.Scene {
             this.applyLift();
         } 
         else if (this.cursors.right.isDown || this.rightKey.isDown) {
+            this.player.flipX = true;
             if (this.player.body.velocity.x < this.heliSettings.startSpeedX) {
                 this.player.setVelocityX(this.heliSettings.startSpeedX);
             }
@@ -365,13 +373,13 @@ class GameScene extends Phaser.Scene {
             let block = null;
 
             if (blockType === 0) {
-                block = this.platforms.create(randomX, this.highestGeneratedHazardY, 'block_square');
+                block = this.platforms.create(randomX, this.highestGeneratedHazardY, 'block_apartment');
                 block.refreshBody();
             } else if (blockType === 1) {
-                block = this.hazards.create(randomX, this.highestGeneratedHazardY, 'block_rect');
+                block = this.hazards.create(randomX, this.highestGeneratedHazardY, 'block_forest');
                 block.refreshBody();
             } else {
-                block = this.hazards.create(randomX, this.highestGeneratedHazardY, 'block_triangle');
+                block = this.hazards.create(randomX, this.highestGeneratedHazardY, 'block_house'); 
                 block.refreshBody();
             }
 
@@ -379,11 +387,11 @@ class GameScene extends Phaser.Scene {
                 let personX = randomX;
                 let personY = this.highestGeneratedHazardY;
 
-                if (blockType === 0) personY = this.highestGeneratedHazardY - 60 - 20;
-                else if (blockType === 1) personY = this.highestGeneratedHazardY - 90 - 20;
-                else personY = this.highestGeneratedHazardY - 60 - 20;
+                if (blockType === 0) personY = block.y - (block.height / 2) - 10;
+                else if (blockType === 1) personY = block.y - (block.height / 2) - 10;
+                else personY = block.y - (block.height / 2) - 10;
 
-                let person = this.survivors.create(personX, personY, 'person_placeholder');
+                let person = this.survivors.create(personX, personY, 'person_new');
                 
                 if (this.isGrowthActive) {
                     person.setScale(2);
@@ -409,23 +417,35 @@ class GameScene extends Phaser.Scene {
                     let rocket = this.flyingHazards.create(spawnX, spawnY, 'block_rocket');
                     let rocketSpeed = -(this.heliSettings.maxSpeedY + 150);
                     rocket.setVelocityY(rocketSpeed);
+                    // Rakete zeigt nach oben, also 0 Grad lassen
                 } else {
                     let fromLeft = Phaser.Math.Between(0, 1) === 1;
                     let spawnX = fromLeft ? -200 : 1000;
                     let spawnY = Phaser.Math.Between(cameraTop - 50, cameraTop + 250);
-                    let bar = this.flyingHazards.create(spawnX, spawnY, 'block_horizontal');
+                    let bar = this.flyingHazards.create(spawnX, spawnY, 'block_flight');
                     let speedX = Phaser.Math.Between(150, 250);
-                    bar.setVelocityX(fromLeft ? speedX : -speedX);
+                    
+                    // Rotation anpassen:
+                    if (fromLeft) {
+                        bar.setAngle(90); // Spitze zeigt nach rechts
+                        bar.setVelocityX(speedX);
+                    } else {
+                        bar.setAngle(-90); // Spitze zeigt nach links
+                        bar.setVelocityX(-speedX);
+                    }
                 }
             }
         }
-        this.flyingHazards.children.iterate((child) => {
-            if (child) {
+        
+        // Iteration (nutze .getChildren(), wie wir es besprochen hatten)
+        this.flyingHazards.getChildren().forEach((child) => {
+            if (child.active) {
                 if (child.texture.key === 'block_rocket' && child.y < cameraTop - 100) {
                     this.flyingHazards.killAndHide(child);
                     child.body.enable = false;
                 }
-                else if (child.texture.key === 'block_horizontal' && (child.x < -300 || child.x > 1100)) {
+                // Hinweis: Dein Icon heißt jetzt 'block_flight', nicht mehr 'block_horizontal'
+                else if (child.texture.key === 'block_flight' && (child.x < -300 || child.x > 1100)) {
                     this.flyingHazards.killAndHide(child);
                     child.body.enable = false;
                 }
@@ -527,10 +547,10 @@ class GameScene extends Phaser.Scene {
         while (this.highestGeneratedY > targetY) {
             this.highestGeneratedY -= this.wallBlockHeight;
             let leftWall = this.walls.create(20, this.highestGeneratedY, 'wall_placeholder');
-            leftWall.setVisible(false); 
+            leftWall.setVisible(true); 
             leftWall.refreshBody();
             let rightWall = this.walls.create(780, this.highestGeneratedY, 'wall_placeholder');
-            rightWall.setVisible(false); 
+            rightWall.setVisible(true); 
             rightWall.refreshBody();
         }
         this.walls.children.iterate((child) => {
@@ -544,11 +564,20 @@ class GameScene extends Phaser.Scene {
     handleWallCollision(player, wall) {
         if (this.isPhasing) return; 
         if (this.bounceTimer > 0) return;
+        
         this.bounceTimer = 200;
         let bounceSpeedX = this.heliSettings.maxSpeedX * 0.9;
         let currentVelocityY = player.body.velocity.y;
 
-        if (player.x < 400) player.setVelocity(bounceSpeedX, currentVelocityY);
-        else player.setVelocity(-bounceSpeedX, currentVelocityY);
+        // Wenn der Heli links gegen die Wand prallt (x < 400), fliegt er nach rechts
+        if (player.x < 400) {
+            player.setVelocity(bounceSpeedX, currentVelocityY);
+            player.flipX = true; // Drehe den Heli nach rechts
+        } 
+        // Wenn der Heli rechts gegen die Wand prallt, fliegt er nach links
+        else {
+            player.setVelocity(-bounceSpeedX, currentVelocityY);
+            player.flipX = false; // Drehe den Heli nach links
+        }
     }
 }

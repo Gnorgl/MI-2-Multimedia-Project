@@ -5,23 +5,80 @@ class BootScene extends Phaser.Scene {
     }
 
     preload() {
-        // Hier kommen ALLE deine canvas-Definitionen rein (wie du sie früher hattest)
-        this.createPlaceholderTexture('heli_placeholder', 40, 30, '#ffffff');
-        this.createPlaceholderTexture('wall_placeholder', 40, 40, '#4a3728');
-        this.createPlaceholderTexture('block_square', 120, 120, '#0055ff');
-        this.createPlaceholderTexture('block_rect', 80, 180, '#ffaa00');
-        this.createPlaceholderTexture('block_horizontal', 160, 40, '#9900ff');
-        this.createPlaceholderTexture('block_rocket', 30, 80, '#00ffcc');
-        this.createPlaceholderTexture('person_placeholder', 20, 40, '#e0e0e0');
+        this.createHeliTexture();
+        this.createHouseTexture();
+        this.createPersonTexture(); // accessibility_new
+        this.createRocketTexture(); // NEU: rocket
+        this.createFlightTexture()
+        this.createApartmentTexture();
+        this.createForestTexture()
         
-        // Speziell für das Dreieck, da es kein einfaches Rechteck ist
-        let triCanvas = this.textures.createCanvas('block_triangle', 120, 120);
-        let triCtx = triCanvas.context;
-        triCtx.fillStyle = '#ff3333';
-        triCtx.beginPath();
-        triCtx.moveTo(60, 0); triCtx.lineTo(120, 120); triCtx.lineTo(0, 120);
-        triCtx.closePath(); triCtx.fill();
-        triCanvas.refresh();
+        // Bestehende Placeholders
+        this.createPlaceholderTexture('wall_placeholder', 40, 40, '#535353');
+    }
+
+    createForestTexture() {
+    const size = 128; // Etwas mehr Platz für die Details des Symbols
+    let canvas = this.textures.createCanvas('block_forest', size, size);
+    let ctx = canvas.context;
+
+    ctx.font = `${size * 1.1}px 'Material Symbols Rounded'`;
+    ctx.fillStyle = '#535353'; // Ein kräftiges Dunkelgrün
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Das Symbol 'forest'
+    ctx.fillText('forest', size / 2, size / 2);
+    
+    canvas.refresh();
+    }
+
+    createApartmentTexture() {
+    const size = 128;
+    let canvas = this.textures.createCanvas('block_apartment', size, size);
+    let ctx = canvas.context;
+
+    ctx.font = `${size * 1.1}px 'Material Symbols Rounded'`;
+    ctx.fillStyle = '#535353'; // Dein Blau
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Das Symbol 'apartment'
+    ctx.fillText('apartment', size / 2, size / 2);
+    
+    canvas.refresh();
+    }
+
+    createFlightTexture() {
+    const size = 64;
+    let canvas = this.textures.createCanvas('block_flight', size, size);
+    let ctx = canvas.context;
+
+    ctx.font = `${size}px 'Material Symbols Rounded'`;
+    ctx.fillStyle = '#535353'; // Oder deine Wunschfarbe
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Das Symbol 'flight'
+    ctx.fillText('flight', size / 2, size / 2);
+    
+    canvas.refresh();
+    }
+
+    createRocketTexture() {
+        const size = 64;
+        let canvas = this.textures.createCanvas('block_rocket', size, size);
+        let ctx = canvas.context;
+
+        ctx.font = `${size * 1.1}px 'Material Symbols Rounded'`;
+        ctx.fillStyle = '#535353';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Das 'rocket' Symbol
+        ctx.fillText('rocket', size / 2, size / 2);
+        
+        canvas.refresh();
     }
 
     // Hilfsfunktion zum sauberen Erstellen
@@ -31,6 +88,63 @@ class BootScene extends Phaser.Scene {
         canvas.context.fillRect(0, 0, w, h);
         canvas.refresh();
     }
+
+    createPersonTexture() {
+    const size = 32;
+    let canvas = this.textures.createCanvas('person_new', size, size);
+    let ctx = canvas.context;
+
+    ctx.font = `${size}px 'Material Symbols Rounded'`;
+    ctx.fillStyle = '#535353'; // Ein auffälliges Orange/Gelb, damit sie gut sichtbar sind
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Das Symbol 'accessibility_new'
+    ctx.fillText('accessibility_new', size / 2, size / 2);
+    
+    canvas.refresh();
+    }
+
+    createHeliTexture() {
+    const size = 64; // Etwas größer für bessere Auflösung
+    let canvas = this.textures.createCanvas('heli_placeholder', size, size);
+    let ctx = canvas.context;
+
+    // Stil-Einstellungen
+    ctx.font = `${size}px 'Material Symbols Rounded'`;
+    ctx.fillStyle = '#535353'; // Dein UI-Grauton
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Symbol zeichnen
+    ctx.fillText('helicopter', size / 2, size / 2);
+    
+    canvas.refresh();
+    }
+
+    createHouseTexture() {
+        const size = 128;
+        let canvas = this.textures.createCanvas('block_house', size, size);
+        let ctx = canvas.context;
+
+        ctx.font = `${size * 1.15}px 'Material Symbols Rounded'`;
+        ctx.fillStyle = '#535353'; // Dein einheitliches Grau
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Das 'house' Symbol
+        ctx.fillText('house', size / 2, size / 2);
+        
+        canvas.refresh();
+    }
+
+
+
+
+
+
+
+
 
     create() {
         this.scene.start('GameScene');
