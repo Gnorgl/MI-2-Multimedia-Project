@@ -1,2 +1,2 @@
 // js/main.js
-const game = new Phaser.Game(config);
+window.game = new Phaser.Game(config);

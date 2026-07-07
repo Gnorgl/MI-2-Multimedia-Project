@@ -7,14 +7,31 @@ class BootScene extends Phaser.Scene {
     preload() {
         this.createHeliTexture();
         this.createHouseTexture();
-        this.createPersonTexture(); // accessibility_new
-        this.createRocketTexture(); // NEU: rocket
+        this.createPersonTexture();
+        this.createRocketTexture();
         this.createFlightTexture()
         this.createApartmentTexture();
         this.createForestTexture()
         
-        // Bestehende Placeholders
+        // Placeholders
         this.createPlaceholderTexture('wall_placeholder', 40, 40, '#535353');
+
+        //Audio:
+        this.load.audio('ui_click', 'assets/audio/blipSelect/blipSelect (2).wav');
+        this.load.audio('explosion', 'assets/audio/explosion/explosion.wav')
+        this.load.audio('explosion_lava', 'assets/audio/explosion/explosion (1).wav')
+        this.load.audio('heli_loop', 'assets/audio/helicopter/helicopter (2).wav');
+        this.load.audio('pickup_person', 'assets/audio/pickup/pickup2.wav');
+        this.load.audio('plane', 'assets/audio/plane/plane.wav');
+        //Abilities-Audio:
+        this.load.audio('powerUp_shield', 'assets/audio/powerUp/powerUp (3).wav');
+        this.load.audio('powerUp_growth', 'assets/audio/powerUp/powerUp (1).wav');
+        this.load.audio('powerUp_phase', 'assets/audio/powerUp/powerUp.wav');
+
+        this.load.audio('rocket', 'assets/audio/rocket/rocket (1).wav');
+
+        this.load.audio('wallHit', 'assets/audio/wallHit/wallHit (1).wav');
+
     }
 
     createForestTexture() {
@@ -23,7 +40,7 @@ class BootScene extends Phaser.Scene {
     let ctx = canvas.context;
 
     ctx.font = `${size * 1.1}px 'Material Symbols Rounded'`;
-    ctx.fillStyle = '#535353'; // Ein kräftiges Dunkelgrün
+    ctx.fillStyle = '#535353';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
@@ -39,7 +56,7 @@ class BootScene extends Phaser.Scene {
     let ctx = canvas.context;
 
     ctx.font = `${size * 1.1}px 'Material Symbols Rounded'`;
-    ctx.fillStyle = '#535353'; // Dein Blau
+    ctx.fillStyle = '#535353';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
@@ -55,7 +72,7 @@ class BootScene extends Phaser.Scene {
     let ctx = canvas.context;
 
     ctx.font = `${size}px 'Material Symbols Rounded'`;
-    ctx.fillStyle = '#535353'; // Oder deine Wunschfarbe
+    ctx.fillStyle = '#535353';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
@@ -81,7 +98,6 @@ class BootScene extends Phaser.Scene {
         canvas.refresh();
     }
 
-    // Hilfsfunktion zum sauberen Erstellen
     createPlaceholderTexture(key, w, h, color) {
         let canvas = this.textures.createCanvas(key, w, h);
         canvas.context.fillStyle = color;
@@ -95,7 +111,7 @@ class BootScene extends Phaser.Scene {
     let ctx = canvas.context;
 
     ctx.font = `${size}px 'Material Symbols Rounded'`;
-    ctx.fillStyle = '#535353'; // Ein auffälliges Orange/Gelb, damit sie gut sichtbar sind
+    ctx.fillStyle = '#535353'; 
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
@@ -106,13 +122,13 @@ class BootScene extends Phaser.Scene {
     }
 
     createHeliTexture() {
-    const size = 64; // Etwas größer für bessere Auflösung
+    const size = 64; 
     let canvas = this.textures.createCanvas('heli_placeholder', size, size);
     let ctx = canvas.context;
 
     // Stil-Einstellungen
     ctx.font = `${size}px 'Material Symbols Rounded'`;
-    ctx.fillStyle = '#535353'; // Dein UI-Grauton
+    ctx.fillStyle = '#535353'; 
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
@@ -128,7 +144,7 @@ class BootScene extends Phaser.Scene {
         let ctx = canvas.context;
 
         ctx.font = `${size * 1.15}px 'Material Symbols Rounded'`;
-        ctx.fillStyle = '#535353'; // Dein einheitliches Grau
+        ctx.fillStyle = '#535353';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
@@ -137,14 +153,6 @@ class BootScene extends Phaser.Scene {
         
         canvas.refresh();
     }
-
-
-
-
-
-
-
-
 
     create() {
         this.scene.start('GameScene');

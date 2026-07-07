@@ -225,7 +225,7 @@ body {
 /* Minimalistischer Blink-Effekt für aktive Fähigkeiten */
 @keyframes active-blink {
     0%, 100% { border-color: #535353; background: #f7f7f7; }
-    50% { border-color: #888888; background: #00e1ff; }
+    50% { border-color: #888888; background: #ffa600; }
 }
 
 .shop-card.active-item {

@@ -136,6 +136,10 @@ class GameScene extends Phaser.Scene {
 
         this.cameras.main.startFollow(this.player, true, 0, 1, 0, 200);
         this.cameras.main.setBounds(0, -999999, 800, 999999 + 800);
+
+        //Sound:
+        this.heliSound = this.sound.add('heli_loop', { loop: true, volume: 0.2 });
+        this.heliSound.play();
     }
 
     update(time, delta) {
@@ -239,6 +243,17 @@ class GameScene extends Phaser.Scene {
 
         this.player.body.setMaxVelocityX(this.heliSettings.maxSpeedX);
         this.player.body.setMaxVelocityY(this.heliSettings.maxSpeedY);
+
+        //Sound
+        // --- DYNAMISCHER ROTOR-SOUND ---
+        if (this.heliSound && this.heliSound.isPlaying) {
+            let speedY = Math.abs(this.player.body.velocity.y);
+            let speedFactor = Phaser.Math.Clamp(speedY / this.heliSettings.maxSpeedY, 0, 1);
+            
+            // Rate wandert zwischen 0.85 (tief im Stand) und 1.45 (hoch bei Höchstgeschwindigkeit)
+            this.heliSound.setRate(0.85 + (speedFactor * 0.6));
+            this.heliSound.setVolume(0.2 + (speedFactor * 0.25));
+        }
     }
 
     applyLift() {
@@ -271,6 +286,9 @@ class GameScene extends Phaser.Scene {
         this.hasShield = true;
         this.updateCoinDisplayHTML();
         this.player.setTint(0x00aaff);
+
+        // Sound abspielen
+        this.sound.play('powerUp_shield', { volume: 0.6 });
         
         document.getElementById('card-shield')?.classList.add('active-item');
         console.log("Schild gekauft & aktiviert!");
@@ -282,6 +300,9 @@ class GameScene extends Phaser.Scene {
         this.totalCoins -= this.itemCosts.growth;
         this.isGrowthActive = true;
         this.updateCoinDisplayHTML();
+
+        // Sound abspielen
+        this.sound.play('powerUp_growth', { volume: 0.6 });
         
         document.getElementById('card-growth')?.classList.add('active-item');
         console.log("Riesen-Wachstum aktiviert!");
@@ -315,6 +336,9 @@ class GameScene extends Phaser.Scene {
         this.isPhasing = true;
         this.updateCoinDisplayHTML();
         this.player.setAlpha(0.4);
+
+        // Sound abspielen
+        this.sound.play('powerUp_phase', { volume: 0.6 });
         
         document.getElementById('card-phase')?.classList.add('active-item');
         console.log("Phase-Modus gekauft!");
@@ -336,6 +360,9 @@ class GameScene extends Phaser.Scene {
             this.hasShield = false;
             this.player.clearTint(); 
             console.log("Schild zerstört!");
+
+            // Sound abspielen, wenn das Schild bricht
+            this.sound.play('explosion', { volume: 0.5, rate: 1.5 });
             
             document.getElementById('card-shield')?.classList.remove('active-item');
             
@@ -348,6 +375,10 @@ class GameScene extends Phaser.Scene {
             return;
         }
 
+        // Fataler Crash -> Explosion
+        this.sound.play('explosion', { volume: 0.8 });
+        this.resetGameManual();
+
         this.resetGameManual();
     }
 
@@ -356,6 +387,9 @@ class GameScene extends Phaser.Scene {
         person.body.enable = false; 
         
         this.rescuedCount += 1;
+
+        // Sound abspielen
+        this.sound.play('pickup_person', { volume: 0.5 });
         
         let currentDisplay = document.querySelector('.current-rescue-display');
         if (currentDisplay) {
@@ -418,12 +452,19 @@ class GameScene extends Phaser.Scene {
                     let rocketSpeed = -(this.heliSettings.maxSpeedY + 150);
                     rocket.setVelocityY(rocketSpeed);
                     // Rakete zeigt nach oben, also 0 Grad lassen
+
+                    // Sound abspielen
+                    this.sound.play('rocket', { volume: 0.5 });
+
                 } else {
                     let fromLeft = Phaser.Math.Between(0, 1) === 1;
                     let spawnX = fromLeft ? -200 : 1000;
                     let spawnY = Phaser.Math.Between(cameraTop - 50, cameraTop + 250);
                     let bar = this.flyingHazards.create(spawnX, spawnY, 'block_flight');
                     let speedX = Phaser.Math.Between(150, 250);
+
+                    // Sound abspielen (mit Stereo-Panning je nach Startrichtung!)
+                    this.sound.play('plane', { volume: 0.4, pan: fromLeft ? -0.6 : 0.6 });
                     
                     // Rotation anpassen:
                     if (fromLeft) {
@@ -467,6 +508,9 @@ class GameScene extends Phaser.Scene {
     }
 
     resetGameManual() {
+        if (this.heliSound) {
+            this.heliSound.stop();
+        }
         // Frische Hubschrauber-Attribute aus dem Speicher laden (falls im Shop etwas geandert wurde)
         this.loadActiveHeliSettings();
 
@@ -522,6 +566,13 @@ class GameScene extends Phaser.Scene {
         if (typeof window.enableShopMenu === 'function') {
             window.enableShopMenu();
         }
+
+        // Heli-Sound für die nächste Runde frisch starten
+        if (this.heliSound) {
+            this.heliSound.setRate(0.85);
+            this.heliSound.setVolume(0.2);
+            this.heliSound.play();
+        }
     }
 
     updateCoinDisplayHTML() {
@@ -564,6 +615,9 @@ class GameScene extends Phaser.Scene {
     handleWallCollision(player, wall) {
         if (this.isPhasing) return; 
         if (this.bounceTimer > 0) return;
+
+        // Sound abspielen (kurzer, metallischer/harter Schlag)
+        this.sound.play('wallHit', { volume: 0.4 });
         
         this.bounceTimer = 200;
         let bounceSpeedX = this.heliSettings.maxSpeedX * 0.9;

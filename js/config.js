@@ -49,6 +49,12 @@ const config = {
 
 // UI-Logik für den Shop (wird erst geladen, wenn HTML bereit ist)
 document.addEventListener("DOMContentLoaded", () => {
+    function playUiClickSound() {
+        // Prüft, ob das Spiel und die BootScene bereit sind
+        if (window.game && window.game.scene && window.game.scene.keys.BootScene) {
+            window.game.scene.keys.BootScene.sound.play('ui_click', { volume: 0.6 });
+        }
+    }
     const savedHighScore = localStorage.getItem('heli_people_highscore') || 0;
     const scoreDisplay = document.querySelector('.score-display');
     if (scoreDisplay) scoreDisplay.innerText = String(savedHighScore).padStart(4, '0');
@@ -100,6 +106,8 @@ document.addEventListener("DOMContentLoaded", () => {
         element.addEventListener('click', () => {
             if (toggleShopBtn && toggleShopBtn.disabled) return;
 
+            playUiClickSound();
+
             let ownedHelis = JSON.parse(localStorage.getItem('heli_owned_list')) || ['shop-heli-1'];
             let currentCoins = parseInt(localStorage.getItem('heli_total_coins')) || 0;
             const heliData = HELI_DATABASE[id];
@@ -120,6 +128,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (toggleShopBtn && statsView && shopView) {
         toggleShopBtn.addEventListener("click", () => {
             if (toggleShopBtn.disabled) return;
+
+            playUiClickSound();
+            
             const isShopHidden = shopView.classList.contains("hidden");
             if (isShopHidden) {
                 statsView.classList.add("hidden");
