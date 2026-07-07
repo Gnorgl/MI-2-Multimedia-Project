@@ -138,8 +138,11 @@ class GameScene extends Phaser.Scene {
         this.cameras.main.setBounds(0, -999999, 800, 999999 + 800);
 
         //Sound:
-        this.heliSound = this.sound.add('heli_loop', { loop: true, volume: 0.2 });
+        this.heliSound = this.sound.add('heli_loop', { loop: true, volume: 0 });
         this.heliSound.play();
+
+        this.lavaSound = this.sound.add('lava', { loop: true, volume: 0 });
+        this.lavaSound.play();
     }
 
     update(time, delta) {
@@ -245,14 +248,23 @@ class GameScene extends Phaser.Scene {
         this.player.body.setMaxVelocityY(this.heliSettings.maxSpeedY);
 
         //Sound
-        // --- DYNAMISCHER ROTOR-SOUND ---
+        // --- DYNAMISCHER ROTOR-SOUND MIT INPUT-CHECK ---
         if (this.heliSound && this.heliSound.isPlaying) {
-            let speedY = Math.abs(this.player.body.velocity.y);
-            let speedFactor = Phaser.Math.Clamp(speedY / this.heliSettings.maxSpeedY, 0, 1);
+            let leftPressed = this.cursors.left.isDown || this.leftKey.isDown;
+            let rightPressed = this.cursors.right.isDown || this.rightKey.isDown;
             
-            // Rate wandert zwischen 0.85 (tief im Stand) und 1.45 (hoch bei Höchstgeschwindigkeit)
-            this.heliSound.setRate(0.85 + (speedFactor * 0.6));
-            this.heliSound.setVolume(0.2 + (speedFactor * 0.25));
+            // Wenn eine Taste gedrückt wird, berechnen wir die Intensität
+            if (leftPressed || rightPressed) {
+                let speedY = Math.abs(this.player.body.velocity.y);
+                let speedFactor = Phaser.Math.Clamp(speedY / this.heliSettings.maxSpeedY, 0, 1);
+                
+                // Sound wird schneller/höher und lauter bei Bewegung
+                this.heliSound.setRate(0.9 + (speedFactor * 0.5));
+                this.heliSound.setVolume(0.25 + (speedFactor * 0.25));
+            } else {
+                // Kein Input -> Hubschrauber wird lautlos (volume = 0)
+                this.heliSound.setVolume(0);
+            }
         }
     }
 
@@ -271,6 +283,31 @@ class GameScene extends Phaser.Scene {
         }
 
         this.lavaGraphics.clear();
+
+        // --- NEU: SOUND-STEUERUNG FÜR DIE LAVA ---
+        if (this.lavaCurrentY < cameraBottom) {
+            // Lava ist auf dem Bildschirm sichtbar!
+            this.lavaGraphics.fillStyle(0xff2200, 1.0);
+            let height = cameraBottom - this.lavaCurrentY + 200;
+            this.lavaGraphics.fillRect(0, this.lavaCurrentY, 800, height);
+
+            // Abstand zwischen Spieler und Lava berechnen
+            let distanceToLava = this.lavaCurrentY - this.player.y;
+            
+            // Je kleiner der Abstand (min 0, max maxLavaDistance), desto lauter der Sound
+            let proximityFactor = 1 - Phaser.Math.Clamp(distanceToLava / this.maxLavaDistance, 0, 1);
+            
+            if (this.lavaSound && this.lavaSound.isPlaying) {
+                // Sound wird lauter, je näher die Lava kommt (maximaler Volume-Wert hier: 0.6)
+                this.lavaSound.setVolume(proximityFactor * 0.6);
+            }
+        } else {
+            // Lava ist noch unterhalb des Bildschirms -> stummschalten
+            if (this.lavaSound && this.lavaSound.isPlaying) {
+                this.lavaSound.setVolume(0);
+            }
+        }
+        
         if (this.lavaCurrentY < cameraBottom + 100) {
             this.lavaGraphics.fillStyle(0xff2200, 1.0);
             let height = cameraBottom - this.lavaCurrentY + 200;
@@ -464,7 +501,7 @@ class GameScene extends Phaser.Scene {
                     let speedX = Phaser.Math.Between(150, 250);
 
                     // Sound abspielen (mit Stereo-Panning je nach Startrichtung!)
-                    this.sound.play('plane', { volume: 0.4, pan: fromLeft ? -0.6 : 0.6 });
+                    this.sound.play('plane', { volume: .75, pan: fromLeft ? -0.6 : 0.6 });
                     
                     // Rotation anpassen:
                     if (fromLeft) {
@@ -510,6 +547,30 @@ class GameScene extends Phaser.Scene {
     resetGameManual() {
         if (this.heliSound) {
             this.heliSound.stop();
+        }
+
+        // --- NEU: UNTERSCHEIDUNG DER CRASH-SOUNDS ---
+        // Prüfen, ob der Spieler die Lava berührt hat ODER die Lava gestartet war und jemanden verschlungen hat
+        if (this.player.y >= this.lavaCurrentY) {
+            // Spieler ist in die Lava gestürzt -> Lava-Explosion!
+            this.sound.play('explosion_lava', { volume: 0.85 });
+        } else {
+            // Überprüfen, ob eine Person von Lava verschlungen wurde
+            let lavaSwallowedSomeone = false;
+            this.survivors.children.iterate((person) => {
+                if (person && person.active && person.y >= this.lavaCurrentY) {
+                    lavaSwallowedSomeone = true;
+                }
+            });
+
+            if (lavaSwallowedSomeone) {
+                // Person wurde verschlungen -> Klingt dramatisch
+                this.sound.play('explosion_lava', { volume: 0.7, rate: 0.8 }); // Verlangsamt für mehr Wucht
+            } else {
+                // Normaler Crash gegen ein statisches/fliegendes Hindernis (wird nur abgespielt, wenn nicht schon in handleHazardCollision gefeuert)
+                // Da handleHazardCollision bereits 'explosion' aufruft, kannst du diesen Block hier auch leer lassen,
+                // falls sonst doppelte Sounds abgespielt werden.
+            }
         }
         // Frische Hubschrauber-Attribute aus dem Speicher laden (falls im Shop etwas geandert wurde)
         this.loadActiveHeliSettings();

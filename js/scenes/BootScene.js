@@ -22,7 +22,7 @@ class BootScene extends Phaser.Scene {
         this.load.audio('explosion_lava', 'assets/audio/explosion/explosion (1).wav')
         this.load.audio('heli_loop', 'assets/audio/helicopter/helicopter (2).wav');
         this.load.audio('pickup_person', 'assets/audio/pickup/pickup2.wav');
-        this.load.audio('plane', 'assets/audio/plane/plane.wav');
+        this.load.audio('plane', 'assets/audio/plane/plane (3).wav');
         //Abilities-Audio:
         this.load.audio('powerUp_shield', 'assets/audio/powerUp/powerUp (3).wav');
         this.load.audio('powerUp_growth', 'assets/audio/powerUp/powerUp (1).wav');
@@ -31,6 +31,8 @@ class BootScene extends Phaser.Scene {
         this.load.audio('rocket', 'assets/audio/rocket/rocket (1).wav');
 
         this.load.audio('wallHit', 'assets/audio/wallHit/wallHit (1).wav');
+
+        this.load.audio('lava', 'assets/audio/lava/lava.wav');
 
     }
 
