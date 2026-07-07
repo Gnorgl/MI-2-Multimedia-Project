@@ -34,6 +34,7 @@ class BootScene extends Phaser.Scene {
 
         this.load.audio('lava', 'assets/audio/lava/lava.wav');
 
+        this.load.audio('song', 'assets/audio/backgroundSong/Song.ogg');
     }
 
     createForestTexture() {

@@ -5,23 +5,23 @@ const HELI_DATABASE = {
         settings: { startSpeedX: 120, maxSpeedX: 280, maxSpeedY: 400, accelerationX: 400, phaseDuration: 5000, growthDuration: 6000 }
     },
     'shop-heli-2': {
-        name: 'Standard Upgrade', cost: 50,
+        name: 'Standard Upgrade', cost: 100,
         settings: { startSpeedX: 140, maxSpeedX: 320, maxSpeedY: 420, accelerationX: 450, phaseDuration: 5000, growthDuration: 6000 }
     },
     'shop-heli-3': {
-        name: 'Shield Specialist', cost: 100,
-        settings: { startSpeedX: 140, maxSpeedX: 320, maxSpeedY: 420, accelerationX: 550, phaseDuration: 5000, growthDuration: 6000 }
+        name: 'Shield Specialist', cost: 250,
+        settings: { startSpeedX: 160, maxSpeedX: 360, maxSpeedY: 450, accelerationX: 500, phaseDuration: 5000, growthDuration: 6000 }
     },
     'shop-heli-4': {
-        name: 'Growth Specialist', cost: 150,
-        settings: { startSpeedX: 160, maxSpeedX: 360, maxSpeedY: 450, accelerationX: 550, phaseDuration: 5000, growthDuration: 8000 }
+        name: 'Growth Specialist', cost: 250,
+        settings: { startSpeedX: 160, maxSpeedX: 360, maxSpeedY: 450, accelerationX: 500, phaseDuration: 5000, growthDuration: 8000 }
     },
     'shop-heli-5': {
-        name: 'Phase Specialist', cost: 200,
-        settings: { startSpeedX: 180, maxSpeedX: 400, maxSpeedY: 480, accelerationX: 450, phaseDuration: 7000, growthDuration: 6000 }
+        name: 'Phase Specialist', cost: 250,
+        settings: { startSpeedX: 160, maxSpeedX: 360, maxSpeedY: 450, accelerationX: 500, phaseDuration: 7000, growthDuration: 6000 }
     },
     'shop-heli-6': {
-        name: 'Ultimate Upgrade', cost: 300,
+        name: 'Ultimate Upgrade', cost: 1000,
         settings: { startSpeedX: 180, maxSpeedX: 400, maxSpeedY: 500, accelerationX: 600, phaseDuration: 7000, growthDuration: 8000 }
     }
 };

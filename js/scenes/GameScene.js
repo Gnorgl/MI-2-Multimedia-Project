@@ -36,7 +36,7 @@ class GameScene extends Phaser.Scene {
         this.totalCoins = parseInt(localStorage.getItem('heli_total_coins')) || 0;
 
         // --- AKTIVE FÄHIGKEITEN STATE ---
-        this.hasShield = false;       // Q: Schild aktiv? (Hält bis Einschlag)
+        this.shieldHP = 0;       // Q: Schild aktiv? (Hält bis Einschlag)
         this.isGrowthActive = false;  // W: Personen-Wachstum aktiv?
         this.isPhasing = false;       // E: Phase aktiv? (Temporär durch Wände fliegen)
 
@@ -143,6 +143,10 @@ class GameScene extends Phaser.Scene {
 
         this.lavaSound = this.sound.add('lava', { loop: true, volume: 0 });
         this.lavaSound.play();
+
+        //Background Song:
+        this.bgMusic = this.sound.add('song', { loop: true, volume: 0.25 });
+        this.bgMusic.play();
     }
 
     update(time, delta) {
@@ -317,18 +321,27 @@ class GameScene extends Phaser.Scene {
 
     // --- FÄHIGKEITEN LOGIK-METHODEN (KORRIGIERT) ---
     activateShield() {
-        if (this.hasShield || this.totalCoins < this.itemCosts.shield) return;
+        // Prüfen, ob bereits ein Schild aktiv ist ODER nicht genug Münzen vorhanden sind
+        if (this.shieldHP > 0 || this.totalCoins < this.itemCosts.shield) return;
         
         this.totalCoins -= this.itemCosts.shield;
-        this.hasShield = true;
+        
+        // --- NEU: DOPPELTES SCHILD FÜR DEN SHIELD SPECIALIST ---
+        const activeHeliId = localStorage.getItem('heli_active_id') || 'shop-heli-1';
+        if (activeHeliId === 'shop-heli-3') {
+            this.shieldHP = 2; // Darf 2x getroffen werden
+            this.player.setTint(0x00ffff); // Hellblau / Cyan für starkes Schild
+            console.log("Doppeltes Spezial-Schild gekauft & aktiviert!");
+        } else {
+            this.shieldHP = 1; // Standard-Heli darf 1x getroffen werden
+            this.player.setTint(0x00aaff); // Normales Blau
+            console.log("Standard-Schild gekauft & aktiviert!");
+        }
+        
         this.updateCoinDisplayHTML();
-        this.player.setTint(0x00aaff);
-
-        // Sound abspielen
         this.sound.play('powerUp_shield', { volume: 0.6 });
         
         document.getElementById('card-shield')?.classList.add('active-item');
-        console.log("Schild gekauft & aktiviert!");
     }
 
     activateGrowth() {
@@ -393,29 +406,46 @@ class GameScene extends Phaser.Scene {
     handleHazardCollision() {
         if (this.isPhasing) return; 
 
-        if (this.hasShield) {
-            this.hasShield = false;
-            this.player.clearTint(); 
-            console.log("Schild zerstört!");
-
-            // Sound abspielen, wenn das Schild bricht
+        // --- NEU: SCHILD-PUNKTE ABZIEHEN ---
+        if (this.shieldHP > 0) {
+            this.shieldHP -= 1; // Einen Schildpunkt abziehen
+            
+            // Kurzer Soundeffekt für den Schild-Treffer
             this.sound.play('explosion', { volume: 0.5, rate: 1.5 });
-            
-            document.getElementById('card-shield')?.classList.remove('active-item');
-            
-            this.isPhasing = true;
-            this.player.setAlpha(0.6);
-            this.time.delayedCall(500, () => {
-                this.isPhasing = false;
-                this.player.setAlpha(1.0);
-            });
-            return;
+
+            if (this.shieldHP === 1) {
+                // Das erste Schild des Spezial-Helis ist gebrochen, er hat noch 1 Leben
+                this.player.setTint(0x00aaff); // Färbung auf normales Schild-Blau abschwächen
+                console.log("Erste Schildstufe zerstört! Noch 1 Schildpunkt übrig.");
+                
+                // Kurze Unverwundbarkeit, damit man nicht sofort den zweiten Punkt verliert
+                this.isPhasing = true;
+                this.player.setAlpha(0.6);
+                this.time.delayedCall(400, () => {
+                    this.isPhasing = false;
+                    this.player.setAlpha(1.0);
+                });
+                return;
+            } else if (this.shieldHP === 0) {
+                // Schild ist komplett weg
+                this.player.clearTint(); 
+                console.log("Schild komplett zerstört!");
+                
+                document.getElementById('card-shield')?.classList.remove('active-item');
+                
+                // Kurze Unverwundbarkeit nach komplettem Schildbruch
+                this.isPhasing = true;
+                this.player.setAlpha(0.6);
+                this.time.delayedCall(500, () => {
+                    this.isPhasing = false;
+                    this.player.setAlpha(1.0);
+                });
+                return;
+            }
         }
 
-        // Fataler Crash -> Explosion
+        // Fataler Crash ohne Schild -> Explosion & Game Over
         this.sound.play('explosion', { volume: 0.8 });
-        this.resetGameManual();
-
         this.resetGameManual();
     }
 
@@ -586,7 +616,7 @@ class GameScene extends Phaser.Scene {
         }
 
         // Fähigkeiten-Zustände zurücksetzen
-        this.hasShield = false;
+        this.shieldHP = 0;
         this.isPhasing = false;
         this.isGrowthActive = false;
         this.player.clearTint();
