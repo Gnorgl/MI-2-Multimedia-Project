@@ -139,7 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 updateShopUI();
             } else {
                 shopView.classList.add("hidden");
-                statsView.classList.add("hidden"); // Korrektur: ensure correct toggle logic
+                statsView.classList.add("hidden");
                 statsView.classList.remove("hidden");
                 toggleShopBtn.textContent = "SHOP";
             }

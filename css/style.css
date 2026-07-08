@@ -1,17 +1,16 @@
 /* ==========================================================================
-   1. MINIMALISTISCHER DINO-GRUNDAUFBAU
+   1. Aufbau
    ========================================================================== */
 
 body {
     margin: 0;
     padding: 0;
-    background-color: #f7f7f7; /* Originaler Chrome Dino Hintergrund */
+    background-color: #f7f7f7; 
     font-family: 'Press Start 2P', monospace; /* Verpixelte Retro-Schrift */
-    color: #535353; /* Originales Dino-Dunkelgrau */
+    color: #535353; 
     overflow: hidden;
 }
 
-/* Der Titel oben links im puren Minimalismus */
 .game-logo {
     position: absolute;
     top: 30px;
@@ -23,7 +22,7 @@ body {
     letter-spacing: 2px;
 }
 
-/* Haupt-Layout-Gitter */
+
 .webpage-layout {
     display: flex;
     justify-content: center;
@@ -35,7 +34,6 @@ body {
     gap: 40px;
 }
 
-/* Der Kasten für das Phaser-Spiel (Purer Minimalismus ohne störende Ränder oder Schatten) */
 #game-container {
     overflow: hidden;
     max-height: 90vh; 
@@ -51,19 +49,18 @@ body {
 
 
 /* ==========================================================================
-   2. SEITEN-PANELS (LINKS KOMPAKT, RECHTS FREISTEHENDE & ZENTRIERTE BOXEN)
+   2. SEITEN-PANELS
    ========================================================================== */
 
 .side-panel {
     width: 280px;
-    min-width: 280px;     /* Beide Bereiche bleiben exakt gleich breit */
+    min-width: 280px;     
     max-width: 280px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
 }
 
-/* LINKES PANEL: Behält seinen Kasten-Look und passt sich dem Inhalt an */
 .left-panel {
     background: #ffffff;
     border: 3px solid #535353;
@@ -72,9 +69,8 @@ body {
     height: fit-content;
 }
 
-/* RECHTES PANEL: Keine Außenumrandung – Boxen schweben vollkommen zentriert im Raum */
 .right-panel {
-    height: 90vh;         /* Nutzt weiterhin die volle Höhe des Spiels */
+    height: 90vh;         
     background: transparent; 
     border: none;         
     padding: 0;           
@@ -82,7 +78,7 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center; /* Setzt die gesamte Gruppe absolut vertikal mittig */
-    gap: 20px;            /* Knackiger, gleichmäßiger Abstand zwischen den Boxen und dem Button */
+    gap: 20px;           
 }
 
 .side-panel h2 {
@@ -99,12 +95,12 @@ body {
 .left-panel h2 {
     text-align: center;
     width: 100%;
-    margin-bottom: 20px; /* Optional: etwas Abstand zum Shop-Container */
+    margin-bottom: 20px; 
 }
 
 
 /* ==========================================================================
-   3. DIGITAL-ANZEIGEN (RECHTS - FREISTEHENDE & KOMPAKTE BOXEN)
+   3. ANZEIGEN
    ========================================================================== */
 
 /* Der Hauptcontainer für die Live-Statistiken */
@@ -116,7 +112,6 @@ body {
     margin-bottom: 0; 
 }
 
-/* Jede Statistik bekommt ihre eigene, freistehende weiße Box */
 .stat-box {
     display: flex;
     flex-direction: column;
@@ -131,7 +126,6 @@ body {
     width: 100%;
 }
 
-/* Die h2-Überschriften innerhalb des Stats-Views (Ohne Trennlinien) */
 .stat-box h2 {
     margin: 0 0 12px 0;
     padding: 0;
@@ -141,7 +135,6 @@ body {
     letter-spacing: 1px;
 }
 
-/* Die reinen Zahlen-Anzeigen */
 .score-display, 
 .current-rescue-display, 
 .coin-display {
@@ -151,7 +144,6 @@ body {
     margin: 0;
 }
 
-/* Styling für das Google Font Icon neben dem Counter */
 .walker-icon {
     font-size: 1.6rem;
     vertical-align: middle;
@@ -160,7 +152,7 @@ body {
 
 
 /* ==========================================================================
-   4. FÄHIGKEITEN-KARTEN (LINKS)
+   4. FÄHIGKEITEN
    ========================================================================== */
 
 .shop-container {
@@ -181,7 +173,6 @@ body {
     transition: all 0.2s ease;
 }
 
-/* Das Tastatur-Quadrat (Q, W, E) */
 .card-key {
     background: #535353;
     color: #f7f7f7;
@@ -192,14 +183,12 @@ body {
     font-size: 0.8rem;
 }
 
-/* Neuer Flex-Wrapper, um Icon und Text links nebeneinanderzureihen */
 .card-info-wrapper {
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
-/* Styling für das Icon auf der linken Fähigkeiten-Seite */
 .ability-card-icon {
     font-size: 1.2rem;
     color: #535353;
@@ -222,7 +211,7 @@ body {
     color: #888888;
 }
 
-/* Minimalistischer Blink-Effekt für aktive Fähigkeiten */
+/* Aktive Fähigkeiten */
 @keyframes active-blink {
     0%, 100% { border-color: #535353; background: #f7f7f7; }
     50% { border-color: #888888; background: #ffa600; }
@@ -234,7 +223,7 @@ body {
 
 
 /* ==========================================================================
-   5. VERTIKALE HUBSCHRAUBER-LISTE (RECHTS BEI SHOP-ANSICHT)
+   5. HUBSCHRAUBER-LISTE
    ========================================================================== */
 
 #shop-view {
@@ -254,7 +243,6 @@ body {
     padding-right: 4px;
 }
 
-/* Scrollbar-Styling im Retro-Look */
 .vertical-shop-container::-webkit-scrollbar {
     width: 4px;
 }
@@ -263,7 +251,6 @@ body {
     border-radius: 2px;
 }
 
-/* Einzelner Hubschrauber-Eintrag */
 .heli-item {
     display: flex;
     align-items: center;
@@ -274,7 +261,7 @@ body {
     gap: 16px; 
     cursor: pointer;
     transition: background 0.1s ease;
-    position: relative; /* Wichtig für die relative Positionierung der Badges */
+    position: relative; 
 }
 
 .heli-item:hover {
@@ -295,7 +282,7 @@ body {
     flex-grow: 1; /* Schiebt die Badges automatisch ganz nach rechts */
 }
 
-/* Der Preis bzw. OWNED als prominente Hauptzeile ganz oben */
+/* Der Preis bzw. OWNED als Hauptzeile ganz oben */
 .heli-item-price-status {
     font-size: 0.55rem;
     font-weight: bold;
@@ -304,25 +291,21 @@ body {
     margin-bottom: 2px;
 }
 
-/* Extrem kleine Schriftart für die Detailauflistung der Attribute */
 .heli-item-details {
     font-size: 0.4rem;
     color: #888888;
     line-height: 1.2;
 }
 
-/* Container für die Spezial-Fähigkeiten ganz rechts in der Karte */
 .heli-item-badges {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 8px;
-    min-width: 40px; /* Garantiert, dass die großen Icons stabil stehen */
+    min-width: 40px; 
 }
 
-/* Styling für die Fähigkeits-Icons auf der rechten Seite */
 .heli-badge-icon {
-    font-size: 1.5rem; /* Schön groß und präsent */
     color: #535353;
     font-weight: bold;
 }
@@ -342,7 +325,7 @@ body {
 
 
 /* ==========================================================================
-   6. SHOP-BUTTON (GANZ UNTEN VERANKERT & VERGROESSERT)
+   6. SHOP-BUTTON
    ========================================================================== */
 
 .shop-button-area {
@@ -355,7 +338,6 @@ body {
     width: 100%;
 }
 
-/* Der vergrößerte, blockige Knopf im Arcade-Stil */
 .menu-button {
     background: #535353;
     color: #f7f7f7;
@@ -413,7 +395,7 @@ body {
 }
 
 
-/* --- SPECIAL-ICON FÜR DEN ULTIMATIVEN HELI (RECHTS) --- */
+/* --- SPECIAL-ICON --- */
 
 /* Award Star beim Ultimate Heli -> Rot */
 #shop-heli-6 .heli-badge-icon {
@@ -446,14 +428,13 @@ body {
 
 /* Alle speed_2x Badges -> Gelb */
 .heli-badge-icon[style*="speed_2x"], 
-.heli-badge-icon:contains("speed_2x"), /* Hinweis: CSS kann Text-Content nicht nativ so selektieren, 
-                                        daher nutzen wir eine direktere Methode über die Reihenfolge */
+.heli-badge-icon:contains("speed_2x"),
 .heli-item-badges .heli-badge-icon:nth-child(2) {
     color: #ffd700 !important;
     text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
 }
 
-/* Award Star -> Rot (bleibt wie gewünscht) */
+/* Award Star -> Rot */
 #shop-heli-6 .heli-badge-icon {
     color: #ff3333 !important;
     text-shadow: 0 0 12px rgba(255, 51, 51, 0.6);

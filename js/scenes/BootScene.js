@@ -42,7 +42,7 @@ class BootScene extends Phaser.Scene {
     let canvas = this.textures.createCanvas('block_forest', size, size);
     let ctx = canvas.context;
 
-    ctx.font = `${size * 1.1}px 'Material Symbols Rounded'`;
+    ctx.font = `${size * 1.1}px 'Material Symbols Rounded'`; //Damit die icosn besser in die Box passen
     ctx.fillStyle = '#535353';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -135,7 +135,7 @@ class BootScene extends Phaser.Scene {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
-    // Symbol zeichnen
+    // Das Symbol 'helicopter'
     ctx.fillText('helicopter', size / 2, size / 2);
     
     canvas.refresh();
