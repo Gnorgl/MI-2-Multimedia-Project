@@ -36,9 +36,9 @@ class GameScene extends Phaser.Scene {
         this.totalCoins = parseInt(localStorage.getItem('heli_total_coins')) || 0;
 
         // --- AKTIVE FÄHIGKEITEN STATE ---
-        this.shieldHP = 0;       // Q: Schild aktiv? (Hält bis Einschlag)
-        this.isGrowthActive = false;  // W: Personen-Wachstum aktiv?
-        this.isPhasing = false;       // E: Phase aktiv? (Temporär durch Wände fliegen)
+        this.shieldHP = 0;       // Q: Schild
+        this.isGrowthActive = false;  // W: Personen-Wachstum
+        this.isPhasing = false;       // E: Phase
 
         // Item-Kosten
         this.itemCosts = {
@@ -50,7 +50,7 @@ class GameScene extends Phaser.Scene {
         this.isBouncing = false; 
         this.bounceTimer = 0;   
 
-        // Erweiterte Heli-Settings (Standardwerte, werden dynamisch überschrieben)
+        // Erweiterte Heli-Setting -> abhängig vom ausgewählten Helicopter, siehe loadActiveHeliSetting
         this.heliSettings = {
             startSpeedX: 120,
             maxSpeedX: 280,
@@ -85,7 +85,6 @@ class GameScene extends Phaser.Scene {
     }
 
     create() {
-        // Sicherstellen, dass die Attribute vor Rundenstart frisch geladen sind
         this.loadActiveHeliSettings();
 
         this.physics.world.setBounds(0, -999999, 800, 999999 + 800); 
@@ -98,7 +97,6 @@ class GameScene extends Phaser.Scene {
 
         this.player = this.physics.add.sprite(400, 785, 'heli_placeholder');
 
-        // Setze eine Skalierung, damit es so groß wirkt wie vorher (40x30):
         this.player.setScale(0.75);
         this.player.body.setSize(60, 55);
         this.player.body.setOffset(3, 0);
@@ -109,7 +107,7 @@ class GameScene extends Phaser.Scene {
         this.lavaGraphics = this.add.graphics();
         this.lavaGraphics.setDepth(100); 
 
-        // --- COLLIDER & OVERLAPS ---
+        // --- COLLIDER---
         this.physics.add.collider(this.player, this.walls, this.handleWallCollision, null, this);
         
         this.physics.add.overlap(this.player, this.hazards, this.handleHazardCollision, null, this);
@@ -158,7 +156,7 @@ class GameScene extends Phaser.Scene {
             return;
         }
 
-        // Tasten-Abfragen für Fähigkeiten-Aktivierung während des Flugs (KORRIGIERTE REIHENFOLGE)
+        // Tasten-Abfragen für Fähigkeiten-Aktivierung während des Flugs
         if (Phaser.Input.Keyboard.JustDown(this.keyQ)) { this.activateShield(); } // Q = Shield
         if (Phaser.Input.Keyboard.JustDown(this.keyW)) { this.activateGrowth(); } // W = Growth
         if (Phaser.Input.Keyboard.JustDown(this.keyE)) { this.activatePhase(); }  // E = Phase
@@ -185,13 +183,13 @@ class GameScene extends Phaser.Scene {
         this.handleFlyingHazards(delta, cameraTop, cameraBottom);
         this.handleLava(delta, cameraBottom);
 
-        // Prüft, ob der Spieler die Lava berührt
+        // Lava-Berührungs-Check
         if (this.player.y >= this.lavaCurrentY) {
             this.resetGameManual();
             return;
         }
 
-        // Prüft, ob die Lava eine Person verschlingt
+        // Check ob eine Person von der Lava getroffen wurde -> Game reset
         let lavaSwallowedSomeone = false;
         this.survivors.children.iterate((person) => {
             if (person && person.active) {
@@ -202,7 +200,7 @@ class GameScene extends Phaser.Scene {
         });
 
         if (lavaSwallowedSomeone) {
-            console.log("Game Over: Eine Person wurde von der Lava verschlungen!");
+            console.log("Game Over: Eine Person wurde nicht aufgesammelt!");
             this.resetGameManual();
             return;
         }
@@ -257,7 +255,7 @@ class GameScene extends Phaser.Scene {
             let leftPressed = this.cursors.left.isDown || this.leftKey.isDown;
             let rightPressed = this.cursors.right.isDown || this.rightKey.isDown;
             
-            // Wenn eine Taste gedrückt wird, berechnen wir die Intensität
+            // Wenn eine Taste gedrückt wird, dann ändert sich Intensität von Sound
             if (leftPressed || rightPressed) {
                 let speedY = Math.abs(this.player.body.velocity.y);
                 let speedFactor = Phaser.Math.Clamp(speedY / this.heliSettings.maxSpeedY, 0, 1);
@@ -288,7 +286,7 @@ class GameScene extends Phaser.Scene {
 
         this.lavaGraphics.clear();
 
-        // --- NEU: SOUND-STEUERUNG FÜR DIE LAVA ---
+        // --- Lava-Sound ---
         if (this.lavaCurrentY < cameraBottom) {
             // Lava ist auf dem Bildschirm sichtbar!
             this.lavaGraphics.fillStyle(0xff2200, 1.0);
@@ -319,18 +317,18 @@ class GameScene extends Phaser.Scene {
         }
     }
 
-    // --- FÄHIGKEITEN LOGIK-METHODEN (KORRIGIERT) ---
+    // --- FÄHIGKEITEN LOGIK-METHODEN ---
     activateShield() {
         // Prüfen, ob bereits ein Schild aktiv ist ODER nicht genug Münzen vorhanden sind
         if (this.shieldHP > 0 || this.totalCoins < this.itemCosts.shield) return;
         
         this.totalCoins -= this.itemCosts.shield;
         
-        // --- NEU: DOPPELTES SCHILD FÜR DEN SHIELD SPECIALIST ---
+        // --- DOPPELTES SCHILD FÜR DEN SHIELD SPECIALIST -> Hubschrauber Special ---
         const activeHeliId = localStorage.getItem('heli_active_id') || 'shop-heli-1';
         if (activeHeliId === 'shop-heli-3') {
             this.shieldHP = 2; // Darf 2x getroffen werden
-            this.player.setTint(0x00ffff); // Hellblau / Cyan für starkes Schild
+            this.player.setTint(0x00ffff); // Farbe, mal gucken
             console.log("Doppeltes Spezial-Schild gekauft & aktiviert!");
         } else {
             this.shieldHP = 1; // Standard-Heli darf 1x getroffen werden
@@ -406,7 +404,7 @@ class GameScene extends Phaser.Scene {
     handleHazardCollision() {
         if (this.isPhasing) return; 
 
-        // --- NEU: SCHILD-PUNKTE ABZIEHEN ---
+        // --- SCHILD-PUNKTE ABZIEHEN -> Special Heli ---
         if (this.shieldHP > 0) {
             this.shieldHP -= 1; // Einen Schildpunkt abziehen
             
@@ -414,11 +412,11 @@ class GameScene extends Phaser.Scene {
             this.sound.play('explosion', { volume: 0.5, rate: 1.5 });
 
             if (this.shieldHP === 1) {
-                // Das erste Schild des Spezial-Helis ist gebrochen, er hat noch 1 Leben
+                // Reduziertes Schild
                 this.player.setTint(0x00aaff); // Färbung auf normales Schild-Blau abschwächen
                 console.log("Erste Schildstufe zerstört! Noch 1 Schildpunkt übrig.");
                 
-                // Kurze Unverwundbarkeit, damit man nicht sofort den zweiten Punkt verliert
+                // Kurze Unverwundbarkeit, damit man nicht sofort den zweiten Punkt verliert, wie bei standard schild
                 this.isPhasing = true;
                 this.player.setAlpha(0.6);
                 this.time.delayedCall(400, () => {
@@ -530,7 +528,7 @@ class GameScene extends Phaser.Scene {
                     let bar = this.flyingHazards.create(spawnX, spawnY, 'block_flight');
                     let speedX = Phaser.Math.Between(150, 250);
 
-                    // Sound abspielen (mit Stereo-Panning je nach Startrichtung!)
+                    // Sound abspielen, Stereo Planning abhängig von richunng!
                     this.sound.play('plane', { volume: .75, pan: fromLeft ? -0.6 : 0.6 });
                     
                     // Rotation anpassen:
@@ -545,14 +543,13 @@ class GameScene extends Phaser.Scene {
             }
         }
         
-        // Iteration (nutze .getChildren(), wie wir es besprochen hatten)
+        // Iteration 
         this.flyingHazards.getChildren().forEach((child) => {
             if (child.active) {
                 if (child.texture.key === 'block_rocket' && child.y < cameraTop - 100) {
                     this.flyingHazards.killAndHide(child);
                     child.body.enable = false;
                 }
-                // Hinweis: Dein Icon heißt jetzt 'block_flight', nicht mehr 'block_horizontal'
                 else if (child.texture.key === 'block_flight' && (child.x < -300 || child.x > 1100)) {
                     this.flyingHazards.killAndHide(child);
                     child.body.enable = false;
@@ -579,7 +576,6 @@ class GameScene extends Phaser.Scene {
             this.heliSound.stop();
         }
 
-        // --- NEU: UNTERSCHEIDUNG DER CRASH-SOUNDS ---
         // Prüfen, ob der Spieler die Lava berührt hat ODER die Lava gestartet war und jemanden verschlungen hat
         if (this.player.y >= this.lavaCurrentY) {
             // Spieler ist in die Lava gestürzt -> Lava-Explosion!
@@ -594,15 +590,11 @@ class GameScene extends Phaser.Scene {
             });
 
             if (lavaSwallowedSomeone) {
-                // Person wurde verschlungen -> Klingt dramatisch
-                this.sound.play('explosion_lava', { volume: 0.7, rate: 0.8 }); // Verlangsamt für mehr Wucht
+                this.sound.play('explosion_lava', { volume: 0.7, rate: 0.8 });
             } else {
-                // Normaler Crash gegen ein statisches/fliegendes Hindernis (wird nur abgespielt, wenn nicht schon in handleHazardCollision gefeuert)
-                // Da handleHazardCollision bereits 'explosion' aufruft, kannst du diesen Block hier auch leer lassen,
-                // falls sonst doppelte Sounds abgespielt werden.
+                //normale explosion dann hier
             }
         }
-        // Frische Hubschrauber-Attribute aus dem Speicher laden (falls im Shop etwas geandert wurde)
         this.loadActiveHeliSettings();
 
         if (this.rescuedCount > 0) {
@@ -658,7 +650,7 @@ class GameScene extends Phaser.Scene {
             window.enableShopMenu();
         }
 
-        // Heli-Sound für die nächste Runde frisch starten
+        // Heli-Sound für die nächste Runde starten
         if (this.heliSound) {
             this.heliSound.setRate(0.85);
             this.heliSound.setVolume(0.2);
@@ -707,7 +699,7 @@ class GameScene extends Phaser.Scene {
         if (this.isPhasing) return; 
         if (this.bounceTimer > 0) return;
 
-        // Sound abspielen (kurzer, metallischer/harter Schlag)
+        // Sound abspielen
         this.sound.play('wallHit', { volume: 0.4 });
         
         this.bounceTimer = 200;
