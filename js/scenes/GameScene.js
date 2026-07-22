@@ -2,6 +2,9 @@ class GameScene extends Phaser.Scene {
 
     constructor() {
         super({ key: 'GameScene' });
+
+        this.bgStatic = null;
+
         this.player = null;
         this.cursors = null;
         this.leftKey = null;
@@ -87,6 +90,15 @@ class GameScene extends Phaser.Scene {
     create() {
         this.loadActiveHeliSettings();
 
+        this.bgDynamic = this.add.image(0, 800, 'bg_jungle_dynamic');
+            
+        // 2. Ankerpunkt (Origin) auf unten-links setzen (X=0, Y=1.0)
+        // Y=1.0 bedeutet: Der Bezugspunkt liegt ganz unten an der Bildkante!
+        this.bgDynamic.setOrigin(0, 1.0); 
+        
+        this.bgDynamic.setScrollFactor(0); // Bleibt am Fenster fixiert
+        this.bgDynamic.setDepth(-100);
+
         this.physics.world.setBounds(0, -999999, 800, 999999 + 800); 
 
         this.hazards = this.physics.add.staticGroup();
@@ -150,6 +162,17 @@ class GameScene extends Phaser.Scene {
     update(time, delta) {
         let cameraBottom = this.cameras.main.scrollY + this.cameras.main.height;
         let cameraTop = this.cameras.main.scrollY;
+
+        let heightFlown = Math.max(0, 785 - this.player.y);
+
+        // 2. Exakte Reserve deines 1692px hohen Bildes im 800px Fenster
+        let maxOffset = 1692 - 800; // 892 Pixel Reserve
+
+        // 3. Asymptotischer Fortschritt (0.0 bis max ~0.999)
+        let progress = heightFlown / (heightFlown + 12000); 
+
+        // 4. Das Bild startet bei Y = 800 und schiebt sich mit steigender Höhe nach unten
+        this.bgDynamic.y = 800 + (progress * maxOffset);
 
         if (this.player.y > cameraBottom + 50) {
             this.resetGameManual(); 

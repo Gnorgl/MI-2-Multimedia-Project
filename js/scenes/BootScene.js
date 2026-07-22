@@ -5,6 +5,9 @@ class BootScene extends Phaser.Scene {
     }
 
     preload() {
+
+        this.load.image('bg_jungle_dynamic', 'assets/sprites/background.jpg');
+
         this.createHeliTexture();
         this.createHouseTexture();
         this.createPersonTexture();

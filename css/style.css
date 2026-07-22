@@ -5,9 +5,14 @@
 body {
     margin: 0;
     padding: 0;
-    background-color: #f7f7f7; 
-    font-family: 'Press Start 2P', monospace; /* Verpixelte Retro-Schrift */
-    color: #535353; 
+    background: #0f172a;
+    color: #f3f4f6;
+    font-family: 'Press Start 2P', monospace;
+    
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
     overflow: hidden;
 }
 
@@ -38,7 +43,7 @@ body {
     overflow: hidden;
     max-height: 90vh; 
     aspect-ratio: 600 / 800;
-    background-color: #f7f7f7; /* Gleiche Farbe wie der Body */
+    background: #0f172a;
     transition: transform 0.3s ease;
 }
 
