@@ -7,7 +7,7 @@ Background-Song by: Patrick de Arteaga. https://patrickdearteaga.com/en/chiptune
 
 Background-Image: https://wallpapers-clan.com/wp-content/uploads/2026/03/retro-pixel-volcano-eruption-8bit-wallpaper-preview.jpg 
 
-Icons used: https://www.flaticon.com/search?word=helicopter  
+Icons used:
 
 <a href="https://www.flaticon.com/free-icons/helicopter" title="helicopter icons">Helicopter icons created by Magnific - Flaticon</a>
 <a href="https://www.flaticon.com/free-icons/helicopter" title="helicopter icons">Helicopter icons created by Design Circle - Flaticon</a>
