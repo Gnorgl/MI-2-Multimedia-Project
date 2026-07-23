@@ -273,10 +273,12 @@ body {
     background: #eeeeee;
 }
 
-/* Google Icons für die Haupt-Helis */
 .heli-item-icon {
-    font-size: 1.8rem;
-    color: #535353;
+    width: 48px;            /* Gewünschte Breite im Shop-Panel */
+    height: 48px;           /* Gewünschte Höhe im Shop-Panel */
+    object-fit: contain;    /* Behält das Seitenverhältnis bei, ohne zu verzerren */
+    display: block;
+    margin: 0 auto;         /* Zentriert das Bild im Shop-Slot */
 }
 
 .heli-item-info {

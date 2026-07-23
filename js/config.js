@@ -128,19 +128,37 @@ document.addEventListener("DOMContentLoaded", () => {
             let ownedHelis = JSON.parse(localStorage.getItem('heli_owned_list')) || ['shop-heli-1'];
             let currentCoins = parseInt(localStorage.getItem('heli_total_coins')) || 0;
             const heliData = HELI_DATABASE[id];
+            let hasChanged = false;
 
             if (ownedHelis.includes(id)) {
                 localStorage.setItem('heli_active_id', id);
+                hasChanged = true;
             } else if (currentCoins >= heliData.cost) {
                 currentCoins -= heliData.cost;
                 localStorage.setItem('heli_total_coins', currentCoins);
                 ownedHelis.push(id);
                 localStorage.setItem('heli_owned_list', JSON.stringify(ownedHelis));
                 localStorage.setItem('heli_active_id', id);
+                hasChanged = true;
             }
+
             updateShopUI();
+
+            // Wenn ein neuer Hubschrauber ausgewählt/gekauft wurde, direkt im Spiel aktualisieren!
+            if (hasChanged) {
+                triggerGameReset();
+            }
         });
     });
+
+    function triggerGameReset() {
+        if (window.game && window.game.scene) {
+            const gameScene = window.game.scene.getScene('GameScene');
+            if (gameScene && typeof gameScene.resetGameManual === 'function') {
+                gameScene.resetGameManual();
+            }
+        }
+    }
 
     if (toggleShopBtn && statsView && shopView) {
         toggleShopBtn.addEventListener("click", () => {

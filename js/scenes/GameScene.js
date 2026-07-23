@@ -110,9 +110,21 @@ class GameScene extends Phaser.Scene {
         const activeTexture = this.getActiveHeliTextureKey();
         this.player = this.physics.add.sprite(400, 785, activeTexture);
 
-        this.player.setScale(0.75);
-        this.player.body.setSize(60, 55);
-        this.player.body.setOffset(3, 0);
+        this.player.setScale(0.15);
+        const targetWidth = 60;
+        const targetHeight = 55;
+
+        this.player.body.setSize(
+            targetWidth / this.player.scaleX, 
+            targetHeight / this.player.scaleY
+        );
+
+        this.player.body.setOffset(
+            (this.player.width - (targetWidth / this.player.scaleX)) / 2,
+            (this.player.height - (targetHeight / this.player.scaleY)) / 2
+        );
+
+        this.player.setFlipX(true);
 
         this.player.setCollideWorldBounds(true, 0, 0, true);
         this.player.setBounce(1, 0);
@@ -250,7 +262,7 @@ class GameScene extends Phaser.Scene {
         }
 
         if (this.cursors.left.isDown || this.leftKey.isDown) {
-            this.player.flipX = false;
+            this.player.flipX = true;
             if (this.player.body.velocity.x > -this.heliSettings.startSpeedX) {
                 this.player.setVelocityX(-this.heliSettings.startSpeedX);
             }
@@ -258,7 +270,7 @@ class GameScene extends Phaser.Scene {
             this.applyLift();
         } 
         else if (this.cursors.right.isDown || this.rightKey.isDown) {
-            this.player.flipX = true;
+            this.player.flipX = false;
             if (this.player.body.velocity.x < this.heliSettings.startSpeedX) {
                 this.player.setVelocityX(this.heliSettings.startSpeedX);
             }
@@ -737,12 +749,12 @@ class GameScene extends Phaser.Scene {
         // Wenn der Heli links gegen die Wand prallt (x < 400), fliegt er nach rechts
         if (player.x < 400) {
             player.setVelocity(bounceSpeedX, currentVelocityY);
-            player.flipX = true; // Drehe den Heli nach rechts
+            player.flipX = false; // Drehe den Heli nach rechts
         } 
         // Wenn der Heli rechts gegen die Wand prallt, fliegt er nach links
         else {
             player.setVelocity(-bounceSpeedX, currentVelocityY);
-            player.flipX = false; // Drehe den Heli nach links
+            player.flipX = true; // Drehe den Heli nach links
         }
     }
 

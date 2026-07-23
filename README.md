@@ -15,3 +15,10 @@ Icons used: https://www.flaticon.com/search?word=helicopter
 <a href="https://www.flaticon.com/free-icons/helicopter" title="helicopter icons">Helicopter icons created by Good Ware - Flaticon</a>
 <a href="https://www.flaticon.com/free-icons/helicopter" title="helicopter icons">Helicopter icons created by juicy_fish - Flaticon</a>
 <a href="https://www.flaticon.com/free-icons/helicopter" title="helicopter icons">Helicopter icons created by Good Ware - Flaticon</a>
+
+<a href="https://www.flaticon.com/free-icons/deploy" title="deploy icons">Deploy icons created by Magnific - Flaticon</a> 
+
+<a href="https://www.flaticon.com/free-icons/plane" title="plane icons">Plane icons created by Konkapp - Flaticon</a>
+
+<a href="https://www.flaticon.com/free-icons/fire" title="fire icons">Fire icons created by Magnific - Flaticon</a>
+<a href="https://www.flaticon.com/free-icons/fire" title="fire icons">Fire icons created by iconixar - Flaticon</a> 
