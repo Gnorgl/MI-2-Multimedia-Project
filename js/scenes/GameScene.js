@@ -35,13 +35,23 @@ class GameScene extends Phaser.Scene {
         this.rescuedCount = 0; 
         this.rescueChance = 0.50; 
 
+        // Skalierungs-Konstanten für PNGs
+        this.obstacleScale = 0.25;  // Skalierung für Häuser / Bäume / Flugzeuge
+        this.personBaseScale = 0.1; // Basis-Skalierung für Überlebende
+
         // Münzkonto
         this.totalCoins = parseInt(localStorage.getItem('heli_total_coins')) || 0;
 
         // --- AKTIVE FÄHIGKEITEN STATE ---
-        this.shieldHP = 0;       // Q: Schild
-        this.isGrowthActive = false;  // W: Personen-Wachstum
-        this.isPhasing = false;       // E: Phase
+        this.shieldHP = 0;           // Q: Schild
+        this.isGrowthActive = false; // W: Personen-Wachstum
+        this.isPhasing = false;      // E: Phase
+
+        // Visuals & Partikel
+        this.shieldGraphic = null;
+        this.shieldAngle = 0;
+        this.rotorParticles = null;
+        this.shieldBreakParticles = null;
 
         // Item-Kosten
         this.itemCosts = {
@@ -53,7 +63,7 @@ class GameScene extends Phaser.Scene {
         this.isBouncing = false; 
         this.bounceTimer = 0;   
 
-        // Erweiterte Heli-Setting -> abhängig vom ausgewählten Helicopter, siehe loadActiveHeliSetting
+        // Erweiterte Heli-Settings
         this.heliSettings = {
             startSpeedX: 120,
             maxSpeedX: 280,
@@ -91,12 +101,8 @@ class GameScene extends Phaser.Scene {
         this.loadActiveHeliSettings();
 
         this.bgDynamic = this.add.image(0, 800, 'bg_jungle_dynamic');
-            
-        // 2. Ankerpunkt (Origin) auf unten-links setzen (X=0, Y=1.0)
-        // Y=1.0 bedeutet: Der Bezugspunkt liegt ganz unten an der Bildkante!
         this.bgDynamic.setOrigin(0, 1.0); 
-        
-        this.bgDynamic.setScrollFactor(0); // Bleibt am Fenster fixiert
+        this.bgDynamic.setScrollFactor(0); 
         this.bgDynamic.setDepth(-100);
 
         this.physics.world.setBounds(0, -999999, 800, 999999 + 800); 
@@ -110,7 +116,8 @@ class GameScene extends Phaser.Scene {
         const activeTexture = this.getActiveHeliTextureKey();
         this.player = this.physics.add.sprite(400, 785, activeTexture);
 
-        this.player.setScale(0.15);
+        // Player PNG Skalierung und Hitbox
+        this.player.setScale(0.125);
         const targetWidth = 60;
         const targetHeight = 55;
 
@@ -125,14 +132,16 @@ class GameScene extends Phaser.Scene {
         );
 
         this.player.setFlipX(true);
-
         this.player.setCollideWorldBounds(true, 0, 0, true);
         this.player.setBounce(1, 0);
+
+        // --- PARTIKEL & VISUALS SETUP ---
+        this.createEffects();
 
         this.lavaGraphics = this.add.graphics();
         this.lavaGraphics.setDepth(100); 
 
-        // --- COLLIDER---
+        // --- COLLIDER ---
         this.physics.add.collider(this.player, this.walls, this.handleWallCollision, null, this);
         
         this.physics.add.overlap(this.player, this.hazards, this.handleHazardCollision, null, this);
@@ -160,16 +169,75 @@ class GameScene extends Phaser.Scene {
         this.cameras.main.startFollow(this.player, true, 0, 1, 0, 200);
         this.cameras.main.setBounds(0, -999999, 800, 999999 + 800);
 
-        //Sound:
+        // Sounds
         this.heliSound = this.sound.add('heli_loop', { loop: true, volume: 0 });
         this.heliSound.play();
 
         this.lavaSound = this.sound.add('lava', { loop: true, volume: 0 });
         this.lavaSound.play();
 
-        //Background Song:
         this.bgMusic = this.sound.add('song', { loop: true, volume: 0.25 });
         this.bgMusic.play();
+    }
+
+    createEffects() {
+        // 1. Visuelles Schild (Graphics)
+        this.shieldGraphic = this.add.graphics();
+        this.shieldGraphic.setDepth(10);
+
+        // Erzeuge eine weiße Textur im Speicher für dynamische Partikel
+        if (!this.textures.exists('particle_white')) {
+            let canvas = this.textures.createCanvas('particle_white', 8, 8);
+            let ctx = canvas.context;
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(4, 4, 4, 0, Math.PI * 2);
+            ctx.fill();
+            canvas.refresh();
+        }
+
+        // 2. NEU: Rotor-Bewegungs-Effect (Graphics)
+        this.rotorGraphic = this.add.graphics();
+        this.rotorGraphic.setDepth(6); // Direkt über dem Helikopter anzeigen
+        this.rotorAngle = 0;
+
+        // 3. Schild-Bruch-Partikel-Emitter (Burst bei Kollision)
+        this.shieldBreakParticles = this.add.particles(0, 0, 'particle_white', {
+            speed: { min: 100, max: 250 },
+            scale: { start: 1.2, end: 0 },
+            alpha: { start: 1, end: 0 },
+            tint: [0x00ffff, 0x00aaff, 0xffffff],
+            lifespan: 500,
+            blendMode: 'ADD',
+            emitting: false
+        });
+        this.shieldBreakParticles.setDepth(15);
+    }
+
+    updateRotorGraphic(time, isMoving) {
+        this.rotorGraphic.clear();
+
+        if (!this.player.active || !isMoving) return;
+
+        // Position relativ zur Helikopter-Mitte
+        const x = this.player.x;
+        const y = this.player.y - 30; // Höhe leicht über den Kufen/Mitte
+
+        // Zeitbasierter Effekt für Bewegung
+        const offset = (time % 150) / 150; 
+        const alpha = 0.6 - (offset * 0.4);
+
+        this.rotorGraphic.lineStyle(2, 0xffffff, alpha);
+
+        // Linker Luftwirbel (drückt nach unten weg)
+        this.rotorGraphic.beginPath();
+        this.rotorGraphic.arc(x - 35, y + (offset * 10), 8, Math.PI * 0.8, Math.PI * 1.5);
+        this.rotorGraphic.strokePath();
+
+        // Rechter Luftwirbel
+        this.rotorGraphic.beginPath();
+        this.rotorGraphic.arc(x + 35, y + (offset * 10), 8, Math.PI * 1.5, Math.PI * 0.2);
+        this.rotorGraphic.strokePath();
     }
 
     update(time, delta) {
@@ -177,14 +245,9 @@ class GameScene extends Phaser.Scene {
         let cameraTop = this.cameras.main.scrollY;
 
         let heightFlown = Math.max(0, 785 - this.player.y);
-
-        // 2. Exakte Reserve deines 1692px hohen Bildes im 800px Fenster
-        let maxOffset = 1692 - 800; // 892 Pixel Reserve
-
-        // 3. Asymptotischer Fortschritt (0.0 bis max ~0.999)
+        let maxOffset = 1692 - 800; 
         let progress = heightFlown / (heightFlown + 12000); 
 
-        // 4. Das Bild startet bei Y = 800 und schiebt sich mit steigender Höhe nach unten
         this.bgDynamic.y = 800 + (progress * maxOffset);
 
         if (this.player.y > cameraBottom + 50) {
@@ -192,19 +255,16 @@ class GameScene extends Phaser.Scene {
             return;
         }
 
-        // Tasten-Abfragen für Fähigkeiten-Aktivierung während des Flugs
-        if (Phaser.Input.Keyboard.JustDown(this.keyQ)) { this.activateShield(); } // Q = Shield
-        if (Phaser.Input.Keyboard.JustDown(this.keyW)) { this.activateGrowth(); } // W = Growth
-        if (Phaser.Input.Keyboard.JustDown(this.keyE)) { this.activatePhase(); }  // E = Phase
+        if (Phaser.Input.Keyboard.JustDown(this.keyQ)) { this.activateShield(); }
+        if (Phaser.Input.Keyboard.JustDown(this.keyW)) { this.activateGrowth(); }
+        if (Phaser.Input.Keyboard.JustDown(this.keyE)) { this.activatePhase(); }
 
         let anyKeyDown = this.cursors.left.isDown || this.leftKey.isDown || 
                           this.cursors.right.isDown || this.rightKey.isDown;
 
-        // Sobald das Spiel startet und abgehoben wird
         if (anyKeyDown && !this.lavaTriggered) {
             this.lavaTriggered = true;
             
-            // Den Shop im UI sofort sperren
             if (typeof window.disableShopMenu === 'function') {
                 window.disableShopMenu();
             }
@@ -219,13 +279,16 @@ class GameScene extends Phaser.Scene {
         this.handleFlyingHazards(delta, cameraTop, cameraBottom);
         this.handleLava(delta, cameraBottom);
 
-        // Lava-Berührungs-Check
+        this.updateRotorGraphic(time, anyKeyDown);
+
+        // Update Schild Visuals
+        this.updateShieldGraphic(time);
+
         if (this.player.y >= this.lavaCurrentY) {
             this.resetGameManual();
             return;
         }
 
-        // Check ob eine Person von der Lava getroffen wurde -> Game reset
         let lavaSwallowedSomeone = false;
         this.survivors.children.iterate((person) => {
             if (person && person.active) {
@@ -285,25 +348,53 @@ class GameScene extends Phaser.Scene {
         this.player.body.setMaxVelocityX(this.heliSettings.maxSpeedX);
         this.player.body.setMaxVelocityY(this.heliSettings.maxSpeedY);
 
-        //Sound
-        // --- DYNAMISCHER ROTOR-SOUND MIT INPUT-CHECK ---
         if (this.heliSound && this.heliSound.isPlaying) {
             let leftPressed = this.cursors.left.isDown || this.leftKey.isDown;
             let rightPressed = this.cursors.right.isDown || this.rightKey.isDown;
             
-            // Wenn eine Taste gedrückt wird, dann ändert sich Intensität von Sound
             if (leftPressed || rightPressed) {
                 let speedY = Math.abs(this.player.body.velocity.y);
                 let speedFactor = Phaser.Math.Clamp(speedY / this.heliSettings.maxSpeedY, 0, 1);
                 
-                // Sound wird schneller/höher und lauter bei Bewegung
                 this.heliSound.setRate(0.9 + (speedFactor * 0.5));
                 this.heliSound.setVolume(0.25 + (speedFactor * 0.25));
             } else {
-                // Kein Input -> Hubschrauber wird lautlos (volume = 0)
                 this.heliSound.setVolume(0);
             }
         }
+    }
+
+    updateShieldGraphic(time) {
+        this.shieldGraphic.clear();
+
+        if (this.shieldHP <= 0 || !this.player.active) return;
+
+        this.shieldAngle += 0.03;
+        let pulse = Math.sin(time / 150) * 3; // Sanftes Pulsieren
+        let radius = 45 + pulse;
+
+        if (this.shieldHP === 2) {
+            // Doppelter Schild (Cyan & Blau)
+            this.shieldGraphic.lineStyle(3, 0x00ffff, 0.9);
+            this.shieldGraphic.strokeCircle(this.player.x, this.player.y, radius + 6);
+            
+            this.shieldGraphic.lineStyle(2, 0x00aaff, 0.6);
+            this.shieldGraphic.strokeCircle(this.player.x, this.player.y, radius);
+        } else {
+            // Einfacher Schild (Blau)
+            this.shieldGraphic.lineStyle(3, 0x00aaff, 0.85);
+            this.shieldGraphic.strokeCircle(this.player.x, this.player.y, radius);
+        }
+
+        // Dekorative rotierende Schild-Segmente
+        let x1 = this.player.x + Math.cos(this.shieldAngle) * radius;
+        let y1 = this.player.y + Math.sin(this.shieldAngle) * radius;
+        let x2 = this.player.x + Math.cos(this.shieldAngle + Math.PI) * radius;
+        let y2 = this.player.y + Math.sin(this.shieldAngle + Math.PI) * radius;
+
+        this.shieldGraphic.fillStyle(0xffffff, 0.9);
+        this.shieldGraphic.fillCircle(x1, y1, 4);
+        this.shieldGraphic.fillCircle(x2, y2, 4);
     }
 
     applyLift() {
@@ -322,25 +413,18 @@ class GameScene extends Phaser.Scene {
 
         this.lavaGraphics.clear();
 
-        // --- Lava-Sound ---
         if (this.lavaCurrentY < cameraBottom) {
-            // Lava ist auf dem Bildschirm sichtbar!
             this.lavaGraphics.fillStyle(0xff2200, 1.0);
             let height = cameraBottom - this.lavaCurrentY + 200;
             this.lavaGraphics.fillRect(0, this.lavaCurrentY, 800, height);
 
-            // Abstand zwischen Spieler und Lava berechnen
             let distanceToLava = this.lavaCurrentY - this.player.y;
-            
-            // Je kleiner der Abstand (min 0, max maxLavaDistance), desto lauter der Sound
             let proximityFactor = 1 - Phaser.Math.Clamp(distanceToLava / this.maxLavaDistance, 0, 1);
             
             if (this.lavaSound && this.lavaSound.isPlaying) {
-                // Sound wird lauter, je näher die Lava kommt (maximaler Volume-Wert hier: 0.6)
                 this.lavaSound.setVolume(proximityFactor * 0.6);
             }
         } else {
-            // Lava ist noch unterhalb des Bildschirms -> stummschalten
             if (this.lavaSound && this.lavaSound.isPlaying) {
                 this.lavaSound.setVolume(0);
             }
@@ -355,26 +439,19 @@ class GameScene extends Phaser.Scene {
 
     // --- FÄHIGKEITEN LOGIK-METHODEN ---
     activateShield() {
-        // Prüfen, ob bereits ein Schild aktiv ist ODER nicht genug Münzen vorhanden sind
         if (this.shieldHP > 0 || this.totalCoins < this.itemCosts.shield) return;
         
         this.totalCoins -= this.itemCosts.shield;
         
-        // --- DOPPELTES SCHILD FÜR DEN SHIELD SPECIALIST -> Hubschrauber Special ---
         const activeHeliId = localStorage.getItem('heli_active_id') || 'shop-heli-1';
         if (activeHeliId === 'shop-heli-3') {
-            this.shieldHP = 2; // Darf 2x getroffen werden
-            this.player.setTint(0x00ffff); // Farbe, mal gucken
-            console.log("Doppeltes Spezial-Schild gekauft & aktiviert!");
+            this.shieldHP = 2; 
         } else {
-            this.shieldHP = 1; // Standard-Heli darf 1x getroffen werden
-            this.player.setTint(0x00aaff); // Normales Blau
-            console.log("Standard-Schild gekauft & aktiviert!");
+            this.shieldHP = 1; 
         }
         
         this.updateCoinDisplayHTML();
         this.sound.play('powerUp_shield', { volume: 0.6 });
-        
         document.getElementById('card-shield')?.classList.add('active-item');
     }
 
@@ -385,28 +462,25 @@ class GameScene extends Phaser.Scene {
         this.isGrowthActive = true;
         this.updateCoinDisplayHTML();
 
-        // Sound abspielen
         this.sound.play('powerUp_growth', { volume: 0.6 });
-        
         document.getElementById('card-growth')?.classList.add('active-item');
-        console.log("Riesen-Wachstum aktiviert!");
 
+        // Verdoppelt die Größe der Personen ausgehend von der Basis-Skalierung
         this.survivors.children.iterate((person) => {
             if (person && person.active) {
-                person.setScale(2);
+                person.setScale(this.personBaseScale * 1.75);
                 person.refreshBody();
             }
         });
 
         this.time.delayedCall(this.heliSettings.growthDuration, () => {
             this.isGrowthActive = false;
-            
             document.getElementById('card-growth')?.classList.remove('active-item');
-            console.log("Wachstum abgelaufen!");
             
+            // Setzt die Größe der Personen zurück
             this.survivors.children.iterate((person) => {
                 if (person && person.active) {
-                    person.setScale(1);
+                    person.setScale(this.personBaseScale);
                     person.refreshBody();
                 }
             });
@@ -421,38 +495,30 @@ class GameScene extends Phaser.Scene {
         this.updateCoinDisplayHTML();
         this.player.setAlpha(0.4);
 
-        // Sound abspielen
         this.sound.play('powerUp_phase', { volume: 0.6 });
-        
         document.getElementById('card-phase')?.classList.add('active-item');
-        console.log("Phase-Modus gekauft!");
 
         this.time.delayedCall(this.heliSettings.phaseDuration, () => {
             this.isPhasing = false;
-            if (!this.hasShield) this.player.clearTint();
             this.player.setAlpha(1.0);
             
             document.getElementById('card-phase')?.classList.remove('active-item');
-            console.log("Phase-Modus beendet!");
         });
     }
 
     handleHazardCollision() {
         if (this.isPhasing) return; 
 
-        // --- SCHILD-PUNKTE ABZIEHEN -> Special Heli ---
         if (this.shieldHP > 0) {
-            this.shieldHP -= 1; // Einen Schildpunkt abziehen
-            
-            // Kurzer Soundeffekt für den Schild-Treffer
+            this.shieldHP -= 1; 
             this.sound.play('explosion', { volume: 0.5, rate: 1.5 });
 
+            // Schild-Bruch Partikel-Explosion erzeugen
+            if (this.shieldBreakParticles) {
+                this.shieldBreakParticles.explode(25, this.player.x, this.player.y);
+            }
+
             if (this.shieldHP === 1) {
-                // Reduziertes Schild
-                this.player.setTint(0x00aaff); // Färbung auf normales Schild-Blau abschwächen
-                console.log("Erste Schildstufe zerstört! Noch 1 Schildpunkt übrig.");
-                
-                // Kurze Unverwundbarkeit, damit man nicht sofort den zweiten Punkt verliert, wie bei standard schild
                 this.isPhasing = true;
                 this.player.setAlpha(0.6);
                 this.time.delayedCall(400, () => {
@@ -461,13 +527,8 @@ class GameScene extends Phaser.Scene {
                 });
                 return;
             } else if (this.shieldHP === 0) {
-                // Schild ist komplett weg
-                this.player.clearTint(); 
-                console.log("Schild komplett zerstört!");
-                
                 document.getElementById('card-shield')?.classList.remove('active-item');
                 
-                // Kurze Unverwundbarkeit nach komplettem Schildbruch
                 this.isPhasing = true;
                 this.player.setAlpha(0.6);
                 this.time.delayedCall(500, () => {
@@ -478,18 +539,36 @@ class GameScene extends Phaser.Scene {
             }
         }
 
-        // Fataler Crash ohne Schild -> Explosion & Game Over
+        // Starker Kamera-Shake bei endgültiger Niederlage
+        this.cameras.main.shake(300, 0.02);
+
         this.sound.play('explosion', { volume: 0.8 });
         this.resetGameManual();
     }
 
     collectPerson(player, person) {
+        // Floating Text Animation "+1"
+        let popup = this.add.text(person.x, person.y - 10, '+1', {
+            fontSize: '22px',
+            fontStyle: 'bold',
+            fill: '#00ff66',
+            stroke: '#000000',
+            strokeThickness: 3
+        }).setOrigin(0.5).setDepth(20);
+
+        this.tweens.add({
+            targets: popup,
+            y: popup.y - 40,
+            alpha: 0,
+            duration: 800,
+            ease: 'Power1',
+            onComplete: () => popup.destroy()
+        });
+
         this.survivors.killAndHide(person);
         person.body.enable = false; 
         
         this.rescuedCount += 1;
-
-        // Sound abspielen
         this.sound.play('pickup_person', { volume: 0.5 });
         
         let currentDisplay = document.querySelector('.current-rescue-display');
@@ -508,30 +587,32 @@ class GameScene extends Phaser.Scene {
             let block = null;
 
             if (blockType === 0) {
+                // block_apartment (burning-building)
                 block = this.platforms.create(randomX, this.highestGeneratedHazardY, 'block_apartment');
+                block.setScale(this.obstacleScale);
                 block.refreshBody();
             } else if (blockType === 1) {
+                // block_forest (burning-forest)
                 block = this.hazards.create(randomX, this.highestGeneratedHazardY, 'block_forest');
+                block.setScale(this.obstacleScale);
                 block.refreshBody();
             } else {
+                // block_house (burning-house)
                 block = this.hazards.create(randomX, this.highestGeneratedHazardY, 'block_house'); 
+                block.setScale(this.obstacleScale);
                 block.refreshBody();
             }
 
             if (Math.random() < this.rescueChance) {
                 let personX = randomX;
-                let personY = this.highestGeneratedHazardY;
-
-                if (blockType === 0) personY = block.y - (block.height / 2) - 10;
-                else if (blockType === 1) personY = block.y - (block.height / 2) - 10;
-                else personY = block.y - (block.height / 2) - 10;
+                // Exakte Platzierung auf der Oberkante des Objekts
+                let personY = block.y - (block.displayHeight / 2) - 15;
 
                 let person = this.survivors.create(personX, personY, 'person_new');
                 
-                if (this.isGrowthActive) {
-                    person.setScale(2);
-                }
-                
+                // Basis-Skalierung für Personen anwenden
+                const currentScale = this.isGrowthActive ? (this.personBaseScale * 1.75) : this.personBaseScale;
+                person.setScale(currentScale);
                 person.refreshBody();
             }
         }
@@ -550,11 +631,11 @@ class GameScene extends Phaser.Scene {
                     let spawnX = Phaser.Math.Between(150, 650); 
                     let spawnY = cameraBottom + 50; 
                     let rocket = this.flyingHazards.create(spawnX, spawnY, 'block_rocket');
+                    rocket.setScale(this.obstacleScale*.75);
+                    
                     let rocketSpeed = -(this.heliSettings.maxSpeedY + 150);
                     rocket.setVelocityY(rocketSpeed);
-                    // Rakete zeigt nach oben, also 0 Grad lassen
 
-                    // Sound abspielen
                     this.sound.play('rocket', { volume: 0.5 });
 
                 } else {
@@ -562,24 +643,25 @@ class GameScene extends Phaser.Scene {
                     let spawnX = fromLeft ? -200 : 1000;
                     let spawnY = Phaser.Math.Between(cameraTop - 50, cameraTop + 250);
                     let bar = this.flyingHazards.create(spawnX, spawnY, 'block_flight');
+                    bar.setScale(this.obstacleScale*.75);
                     let speedX = Phaser.Math.Between(150, 250);
 
-                    // Sound abspielen, Stereo Planning abhängig von richunng!
-                    this.sound.play('plane', { volume: .75, pan: fromLeft ? -0.6 : 0.6 });
+                    this.sound.play('plane', { volume: 0.75, pan: fromLeft ? -0.6 : 0.6 });
                     
-                    // Rotation anpassen:
+                    // Ausrichtung des Flugzeugs (PNG zeigt standardmäßig nach rechts)
                     if (fromLeft) {
-                        bar.setAngle(90); // Spitze zeigt nach rechts
+                        bar.setAngle(0);
+                        bar.setFlipX(false); // Zeigt nach rechts
                         bar.setVelocityX(speedX);
                     } else {
-                        bar.setAngle(-90); // Spitze zeigt nach links
+                        bar.setAngle(0);
+                        bar.setFlipX(true);  // Gespiegelt = Zeigt nach links
                         bar.setVelocityX(-speedX);
                     }
                 }
             }
         }
         
-        // Iteration 
         this.flyingHazards.getChildren().forEach((child) => {
             if (child.active) {
                 if (child.texture.key === 'block_rocket' && child.y < cameraTop - 100) {
@@ -612,12 +694,9 @@ class GameScene extends Phaser.Scene {
             this.heliSound.stop();
         }
 
-        // Prüfen, ob der Spieler die Lava berührt hat ODER die Lava gestartet war und jemanden verschlungen hat
         if (this.player.y >= this.lavaCurrentY) {
-            // Spieler ist in die Lava gestürzt -> Lava-Explosion!
             this.sound.play('explosion_lava', { volume: 0.85 });
         } else {
-            // Überprüfen, ob eine Person von Lava verschlungen wurde
             let lavaSwallowedSomeone = false;
             this.survivors.children.iterate((person) => {
                 if (person && person.active && person.y >= this.lavaCurrentY) {
@@ -627,8 +706,6 @@ class GameScene extends Phaser.Scene {
 
             if (lavaSwallowedSomeone) {
                 this.sound.play('explosion_lava', { volume: 0.7, rate: 0.8 });
-            } else {
-                //normale explosion dann hier
             }
         }
         
@@ -642,19 +719,19 @@ class GameScene extends Phaser.Scene {
             this.totalCoins += coinsEarned;
             localStorage.setItem('heli_total_coins', this.totalCoins);
             
-            console.log(`--- RUNDEN-ABRECHNUNG ---`);
             this.updateHighScoreHTML(this.rescuedCount);
             this.updateCoinDisplayHTML();
         }
 
-        // Fähigkeiten-Zustände zurücksetzen
         this.shieldHP = 0;
         this.isPhasing = false;
         this.isGrowthActive = false;
         this.player.clearTint();
         this.player.setAlpha(1.0);
 
-        // Alle HTML-Leuchteffekte beim Game Over komplett entfernen
+        if (this.shieldGraphic) this.shieldGraphic.clear();
+        if (this.rotorGraphic) this.rotorGraphic.clear();
+
         document.getElementById('card-shield')?.classList.remove('active-item');
         document.getElementById('card-phase')?.classList.remove('active-item');
         document.getElementById('card-growth')?.classList.remove('active-item');
@@ -685,12 +762,10 @@ class GameScene extends Phaser.Scene {
             currentDisplay.innerHTML = '0000';
         }
 
-        // Am Ende das Shop-Menü im UI wieder freigeben
         if (typeof window.enableShopMenu === 'function') {
             window.enableShopMenu();
         }
 
-        // Heli-Sound für die nächste Runde starten
         if (this.heliSound) {
             this.heliSound.setRate(0.85);
             this.heliSound.setVolume(0.2);
@@ -739,22 +814,22 @@ class GameScene extends Phaser.Scene {
         if (this.isPhasing) return; 
         if (this.bounceTimer > 0) return;
 
-        // Sound abspielen
+        // Leichtes Kamera-Shake bei Wandaufprall
+        this.cameras.main.shake(100, 0.005);
+
         this.sound.play('wallHit', { volume: 0.4 });
         
         this.bounceTimer = 200;
         let bounceSpeedX = this.heliSettings.maxSpeedX * 0.9;
         let currentVelocityY = player.body.velocity.y;
 
-        // Wenn der Heli links gegen die Wand prallt (x < 400), fliegt er nach rechts
         if (player.x < 400) {
             player.setVelocity(bounceSpeedX, currentVelocityY);
-            player.flipX = false; // Drehe den Heli nach rechts
+            player.flipX = false; 
         } 
-        // Wenn der Heli rechts gegen die Wand prallt, fliegt er nach links
         else {
             player.setVelocity(-bounceSpeedX, currentVelocityY);
-            player.flipX = true; // Drehe den Heli nach links
+            player.flipX = true; 
         }
     }
 

@@ -22,3 +22,5 @@ Icons used:
 
 <a href="https://www.flaticon.com/free-icons/fire" title="fire icons">Fire icons created by Magnific - Flaticon</a>
 <a href="https://www.flaticon.com/free-icons/fire" title="fire icons">Fire icons created by iconixar - Flaticon</a> 
+
+<a href="https://www.flaticon.com/free-icons/person-standing" title="person standing icons">Person standing icons created by Muhammad Atif - Flaticon</a> 
