@@ -107,7 +107,8 @@ class GameScene extends Phaser.Scene {
         this.survivors = this.physics.add.staticGroup();
         this.walls = this.physics.add.staticGroup();
 
-        this.player = this.physics.add.sprite(400, 785, 'heli_placeholder');
+        const activeTexture = this.getActiveHeliTextureKey();
+        this.player = this.physics.add.sprite(400, 785, activeTexture);
 
         this.player.setScale(0.75);
         this.player.body.setSize(60, 55);
@@ -618,7 +619,11 @@ class GameScene extends Phaser.Scene {
                 //normale explosion dann hier
             }
         }
+        
         this.loadActiveHeliSettings();
+
+        const activeTexture = this.getActiveHeliTextureKey();
+        this.player.setTexture(activeTexture);
 
         if (this.rescuedCount > 0) {
             let coinsEarned = this.rescuedCount * 2; 
@@ -740,4 +745,13 @@ class GameScene extends Phaser.Scene {
             player.flipX = false; // Drehe den Heli nach links
         }
     }
+
+    getActiveHeliTextureKey() {
+        const activeId = localStorage.getItem('heli_active_id') || 'shop-heli-1';
+        if (typeof HELI_DATABASE !== 'undefined' && HELI_DATABASE[activeId]) {
+            return HELI_DATABASE[activeId].textureKey;
+        }
+        return 'heli_sprite_1';
+    }
+
 }

@@ -8,7 +8,12 @@ class BootScene extends Phaser.Scene {
 
         this.load.image('bg_jungle_dynamic', 'assets/sprites/background.jpg');
 
-        this.createHeliTexture();
+        Object.keys(HELI_DATABASE).forEach(id => {
+            const heli = HELI_DATABASE[id];
+            this.load.image(heli.textureKey, heli.image);
+        });
+
+
         this.createHouseTexture();
         this.createPersonTexture();
         this.createRocketTexture();

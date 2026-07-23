@@ -1,27 +1,38 @@
-// Zentrale Hubschrauber-Datenbank mit allen spielrelevanten Attributen
 const HELI_DATABASE = {
     'shop-heli-1': {
         name: 'Start Heli', cost: 0,
+        image: 'assets/sprites/helicopter.png',
+        textureKey: 'heli_sprite_1',
         settings: { startSpeedX: 120, maxSpeedX: 280, maxSpeedY: 400, accelerationX: 400, phaseDuration: 5000, growthDuration: 6000 }
     },
     'shop-heli-2': {
         name: 'Standard Upgrade', cost: 100,
+        image: 'assets/sprites/helicopter (1).png',
+        textureKey: 'heli_sprite_2',
         settings: { startSpeedX: 140, maxSpeedX: 320, maxSpeedY: 420, accelerationX: 450, phaseDuration: 5000, growthDuration: 6000 }
     },
     'shop-heli-3': {
         name: 'Shield Specialist', cost: 250,
+        image: 'assets/sprites/helicopter (2).png',
+        textureKey: 'heli_sprite_3',
         settings: { startSpeedX: 160, maxSpeedX: 360, maxSpeedY: 450, accelerationX: 500, phaseDuration: 5000, growthDuration: 6000 }
     },
     'shop-heli-4': {
         name: 'Growth Specialist', cost: 250,
+        image: 'assets/sprites/helicopter (3).png',
+        textureKey: 'heli_sprite_4',
         settings: { startSpeedX: 160, maxSpeedX: 360, maxSpeedY: 450, accelerationX: 500, phaseDuration: 5000, growthDuration: 8000 }
     },
     'shop-heli-5': {
         name: 'Phase Specialist', cost: 250,
+        image: 'assets/sprites/helicopter (4).png',
+        textureKey: 'heli_sprite_5',
         settings: { startSpeedX: 160, maxSpeedX: 360, maxSpeedY: 450, accelerationX: 500, phaseDuration: 7000, growthDuration: 6000 }
     },
     'shop-heli-6': {
         name: 'Ultimate Upgrade', cost: 1000,
+        image: 'assets/sprites/helicopter (5).png',
+        textureKey: 'heli_sprite_6',
         settings: { startSpeedX: 180, maxSpeedX: 400, maxSpeedY: 500, accelerationX: 600, phaseDuration: 7000, growthDuration: 8000 }
     }
 };
@@ -82,6 +93,12 @@ document.addEventListener("DOMContentLoaded", () => {
         Object.keys(HELI_DATABASE).forEach(id => {
             const element = document.getElementById(id);
             if (!element) return;
+
+            // Bild im Shop-Element setzen (falls ein <img> Tag existiert)
+            const imgElement = element.querySelector('img');
+            if (imgElement && HELI_DATABASE[id].image) {
+                imgElement.src = HELI_DATABASE[id].image;
+            }
 
             const statusTextElement = element.querySelector('.heli-item-price-status');
             element.classList.remove('owned', 'locked', 'active-heli');
