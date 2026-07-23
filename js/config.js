@@ -21,13 +21,13 @@ const HELI_DATABASE = {
         name: 'Growth Specialist', cost: 250,
         image: 'assets/sprites/helicopter (3).png',
         textureKey: 'heli_sprite_4',
-        settings: { startSpeedX: 160, maxSpeedX: 360, maxSpeedY: 450, accelerationX: 500, phaseDuration: 5000, growthDuration: 8000 }
+        settings: { startSpeedX: 160, maxSpeedX: 360, maxSpeedY: 450, accelerationX: 500, phaseDuration: 5000, growthDuration: 12000 }
     },
     'shop-heli-5': {
         name: 'Phase Specialist', cost: 250,
         image: 'assets/sprites/helicopter (4).png',
         textureKey: 'heli_sprite_5',
-        settings: { startSpeedX: 160, maxSpeedX: 360, maxSpeedY: 450, accelerationX: 500, phaseDuration: 7000, growthDuration: 6000 }
+        settings: { startSpeedX: 160, maxSpeedX: 360, maxSpeedY: 450, accelerationX: 500, phaseDuration: 10000, growthDuration: 6000 }
     },
     'shop-heli-6': {
         name: 'Ultimate Upgrade', cost: 1000,
