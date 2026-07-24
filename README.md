@@ -3,7 +3,7 @@ Das Projekt für Medieninformatik 2 im SoSe 2026.
 
 Icons used: https://fonts.google.com/icons 
 Sound effects created with: https://sfxr.me/
-Background-Song by: Patrick de Arteaga. https://patrickdearteaga.com/en/chiptune-8-bit-retro/
+Background-Song by: Patrick de Arteaga. https://patrickdearteaga.com/en/royalty-free-music/
 
 Background-Image: https://wallpapers-clan.com/wp-content/uploads/2026/03/retro-pixel-volcano-eruption-8bit-wallpaper-preview.jpg 
 

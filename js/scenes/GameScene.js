@@ -176,7 +176,7 @@ class GameScene extends Phaser.Scene {
         this.lavaSound = this.sound.add('lava', { loop: true, volume: 0 });
         this.lavaSound.play();
 
-        this.bgMusic = this.sound.add('song', { loop: true, volume: 0.25 });
+        this.bgMusic = this.sound.add('song', { loop: true, volume: 0.125 });
         this.bgMusic.play();
     }
 
