@@ -37,7 +37,6 @@ const HELI_DATABASE = {
     }
 };
 
-// Das Konfigurations-Objekt für Phaser
 const config = {
     type: Phaser.AUTO,
     parent: 'game-container', 
@@ -55,13 +54,11 @@ const config = {
             debug: false
         }
     },
-    scene: [BootScene, GameScene] // Szenen-Reihenfolge festgelegt
+    scene: [BootScene, GameScene]
 };
 
-// UI-Logik für den Shop (wird erst geladen, wenn HTML bereit ist)
 document.addEventListener("DOMContentLoaded", () => {
     function playUiClickSound() {
-        // Prüft, ob das Spiel und die BootScene bereit sind
         if (window.game && window.game.scene && window.game.scene.keys.BootScene) {
             window.game.scene.keys.BootScene.sound.play('ui_click', { volume: 0.6 });
         }
@@ -94,7 +91,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const element = document.getElementById(id);
             if (!element) return;
 
-            // Bild im Shop-Element setzen (falls ein <img> Tag existiert)
             const imgElement = element.querySelector('img');
             if (imgElement && HELI_DATABASE[id].image) {
                 imgElement.src = HELI_DATABASE[id].image;
@@ -144,7 +140,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             updateShopUI();
 
-            // Wenn ein neuer Hubschrauber ausgewählt/gekauft wurde, direkt im Spiel aktualisieren!
             if (hasChanged) {
                 triggerGameReset();
             }

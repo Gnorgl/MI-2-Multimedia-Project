@@ -10,7 +10,6 @@ class GameScene extends Phaser.Scene {
         this.leftKey = null;
         this.rightKey = null;
         
-        // Tasten für Fähigkeiten
         this.keyQ = null;
         this.keyW = null;
         this.keyE = null;
@@ -36,16 +35,15 @@ class GameScene extends Phaser.Scene {
         this.rescueChance = 0.50; 
 
         // Skalierungs-Konstanten für PNGs
-        this.obstacleScale = 0.25;  // Skalierung für Häuser / Bäume / Flugzeuge
-        this.personBaseScale = 0.1; // Basis-Skalierung für Überlebende
+        this.obstacleScale = 0.25;  
+        this.personBaseScale = 0.1;
 
-        // Münzkonto
+        // Münzen
         this.totalCoins = parseInt(localStorage.getItem('heli_total_coins')) || 0;
 
-        // --- AKTIVE FÄHIGKEITEN STATE ---
-        this.shieldHP = 0;           // Q: Schild
-        this.isGrowthActive = false; // W: Personen-Wachstum
-        this.isPhasing = false;      // E: Phase
+        this.shieldHP = 0;           
+        this.isGrowthActive = false;
+        this.isPhasing = false;      
 
         // Visuals & Partikel
         this.shieldGraphic = null;
@@ -75,7 +73,6 @@ class GameScene extends Phaser.Scene {
             growthDuration: 6000
         };
 
-        // Direkt beim Instanziieren die Attribute laden
         this.loadActiveHeliSettings();
     }
 
@@ -116,7 +113,6 @@ class GameScene extends Phaser.Scene {
         const activeTexture = this.getActiveHeliTextureKey();
         this.player = this.physics.add.sprite(400, 785, activeTexture);
 
-        // Player PNG Skalierung und Hitbox
         this.player.setScale(0.125);
         const targetWidth = 60;
         const targetHeight = 55;
@@ -135,13 +131,11 @@ class GameScene extends Phaser.Scene {
         this.player.setCollideWorldBounds(true, 0, 0, true);
         this.player.setBounce(1, 0);
 
-        // --- PARTIKEL & VISUALS SETUP ---
         this.createEffects();
 
         this.lavaGraphics = this.add.graphics();
         this.lavaGraphics.setDepth(100); 
 
-        // --- COLLIDER ---
         this.physics.add.collider(this.player, this.walls, this.handleWallCollision, null, this);
         
         this.physics.add.overlap(this.player, this.hazards, this.handleHazardCollision, null, this);
@@ -156,12 +150,10 @@ class GameScene extends Phaser.Scene {
 
         this.physics.add.overlap(this.player, this.survivors, this.collectPerson, null, this);
 
-        // STEUERUNG KEYS
         this.cursors = this.input.keyboard.createCursorKeys();
         this.leftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
         this.rightKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
 
-        // FÄHIGKEITEN KEYS (Q, W, E)
         this.keyQ = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
         this.keyW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
         this.keyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
@@ -181,11 +173,9 @@ class GameScene extends Phaser.Scene {
     }
 
     createEffects() {
-        // 1. Visuelles Schild (Graphics)
         this.shieldGraphic = this.add.graphics();
         this.shieldGraphic.setDepth(10);
 
-        // Erzeuge eine weiße Textur im Speicher für dynamische Partikel
         if (!this.textures.exists('particle_white')) {
             let canvas = this.textures.createCanvas('particle_white', 8, 8);
             let ctx = canvas.context;
@@ -196,12 +186,10 @@ class GameScene extends Phaser.Scene {
             canvas.refresh();
         }
 
-        // 2. NEU: Rotor-Bewegungs-Effect (Graphics)
         this.rotorGraphic = this.add.graphics();
-        this.rotorGraphic.setDepth(6); // Direkt über dem Helikopter anzeigen
+        this.rotorGraphic.setDepth(6); 
         this.rotorAngle = 0;
 
-        // 3. Schild-Bruch-Partikel-Emitter (Burst bei Kollision)
         this.shieldBreakParticles = this.add.particles(0, 0, 'particle_white', {
             speed: { min: 100, max: 250 },
             scale: { start: 1.2, end: 0 },
@@ -219,22 +207,18 @@ class GameScene extends Phaser.Scene {
 
         if (!this.player.active || !isMoving) return;
 
-        // Position relativ zur Helikopter-Mitte
         const x = this.player.x;
-        const y = this.player.y - 30; // Höhe leicht über den Kufen/Mitte
+        const y = this.player.y - 30; 
 
-        // Zeitbasierter Effekt für Bewegung
         const offset = (time % 150) / 150; 
         const alpha = 0.6 - (offset * 0.4);
 
         this.rotorGraphic.lineStyle(2, 0xffffff, alpha);
 
-        // Linker Luftwirbel (drückt nach unten weg)
         this.rotorGraphic.beginPath();
         this.rotorGraphic.arc(x - 35, y + (offset * 10), 8, Math.PI * 0.8, Math.PI * 1.5);
         this.rotorGraphic.strokePath();
 
-        // Rechter Luftwirbel
         this.rotorGraphic.beginPath();
         this.rotorGraphic.arc(x + 35, y + (offset * 10), 8, Math.PI * 1.5, Math.PI * 0.2);
         this.rotorGraphic.strokePath();
@@ -281,7 +265,6 @@ class GameScene extends Phaser.Scene {
 
         this.updateRotorGraphic(time, anyKeyDown);
 
-        // Update Schild Visuals
         this.updateShieldGraphic(time);
 
         if (this.player.y >= this.lavaCurrentY) {
@@ -370,23 +353,20 @@ class GameScene extends Phaser.Scene {
         if (this.shieldHP <= 0 || !this.player.active) return;
 
         this.shieldAngle += 0.03;
-        let pulse = Math.sin(time / 150) * 3; // Sanftes Pulsieren
+        let pulse = Math.sin(time / 150) * 3;
         let radius = 45 + pulse;
 
         if (this.shieldHP === 2) {
-            // Doppelter Schild (Cyan & Blau)
             this.shieldGraphic.lineStyle(3, 0x00ffff, 0.9);
             this.shieldGraphic.strokeCircle(this.player.x, this.player.y, radius + 6);
             
             this.shieldGraphic.lineStyle(2, 0x00aaff, 0.6);
             this.shieldGraphic.strokeCircle(this.player.x, this.player.y, radius);
         } else {
-            // Einfacher Schild (Blau)
             this.shieldGraphic.lineStyle(3, 0x00aaff, 0.85);
             this.shieldGraphic.strokeCircle(this.player.x, this.player.y, radius);
         }
 
-        // Dekorative rotierende Schild-Segmente
         let x1 = this.player.x + Math.cos(this.shieldAngle) * radius;
         let y1 = this.player.y + Math.sin(this.shieldAngle) * radius;
         let x2 = this.player.x + Math.cos(this.shieldAngle + Math.PI) * radius;
@@ -437,7 +417,6 @@ class GameScene extends Phaser.Scene {
         }
     }
 
-    // --- FÄHIGKEITEN LOGIK-METHODEN ---
     activateShield() {
         if (this.shieldHP > 0 || this.totalCoins < this.itemCosts.shield) return;
         
@@ -465,7 +444,6 @@ class GameScene extends Phaser.Scene {
         this.sound.play('powerUp_growth', { volume: 0.6 });
         document.getElementById('card-growth')?.classList.add('active-item');
 
-        // Verdoppelt die Größe der Personen ausgehend von der Basis-Skalierung
         this.survivors.children.iterate((person) => {
             if (person && person.active) {
                 person.setScale(this.personBaseScale * 1.75);
@@ -477,7 +455,6 @@ class GameScene extends Phaser.Scene {
             this.isGrowthActive = false;
             document.getElementById('card-growth')?.classList.remove('active-item');
             
-            // Setzt die Größe der Personen zurück
             this.survivors.children.iterate((person) => {
                 if (person && person.active) {
                     person.setScale(this.personBaseScale);
@@ -513,7 +490,6 @@ class GameScene extends Phaser.Scene {
             this.shieldHP -= 1; 
             this.sound.play('explosion', { volume: 0.5, rate: 1.5 });
 
-            // Schild-Bruch Partikel-Explosion erzeugen
             if (this.shieldBreakParticles) {
                 this.shieldBreakParticles.explode(25, this.player.x, this.player.y);
             }
@@ -539,7 +515,6 @@ class GameScene extends Phaser.Scene {
             }
         }
 
-        // Starker Kamera-Shake bei endgültiger Niederlage
         this.cameras.main.shake(300, 0.02);
 
         this.sound.play('explosion', { volume: 0.8 });
@@ -547,7 +522,6 @@ class GameScene extends Phaser.Scene {
     }
 
     collectPerson(player, person) {
-        // Floating Text Animation "+1"
         let popup = this.add.text(person.x, person.y - 10, '+1', {
             fontSize: '22px',
             fontStyle: 'bold',
@@ -587,17 +561,14 @@ class GameScene extends Phaser.Scene {
             let block = null;
 
             if (blockType === 0) {
-                // block_apartment (burning-building)
                 block = this.platforms.create(randomX, this.highestGeneratedHazardY, 'block_apartment');
                 block.setScale(this.obstacleScale);
                 block.refreshBody();
             } else if (blockType === 1) {
-                // block_forest (burning-forest)
                 block = this.hazards.create(randomX, this.highestGeneratedHazardY, 'block_forest');
                 block.setScale(this.obstacleScale);
                 block.refreshBody();
             } else {
-                // block_house (burning-house)
                 block = this.hazards.create(randomX, this.highestGeneratedHazardY, 'block_house'); 
                 block.setScale(this.obstacleScale);
                 block.refreshBody();
@@ -605,12 +576,10 @@ class GameScene extends Phaser.Scene {
 
             if (Math.random() < this.rescueChance) {
                 let personX = randomX;
-                // Exakte Platzierung auf der Oberkante des Objekts
                 let personY = block.y - (block.displayHeight / 2) - 15;
 
                 let person = this.survivors.create(personX, personY, 'person_new');
                 
-                // Basis-Skalierung für Personen anwenden
                 const currentScale = this.isGrowthActive ? (this.personBaseScale * 1.75) : this.personBaseScale;
                 person.setScale(currentScale);
                 person.refreshBody();
@@ -648,14 +617,13 @@ class GameScene extends Phaser.Scene {
 
                     this.sound.play('plane', { volume: 0.75, pan: fromLeft ? -0.6 : 0.6 });
                     
-                    // Ausrichtung des Flugzeugs (PNG zeigt standardmäßig nach rechts)
                     if (fromLeft) {
                         bar.setAngle(0);
-                        bar.setFlipX(false); // Zeigt nach rechts
+                        bar.setFlipX(false); 
                         bar.setVelocityX(speedX);
                     } else {
                         bar.setAngle(0);
-                        bar.setFlipX(true);  // Gespiegelt = Zeigt nach links
+                        bar.setFlipX(true); 
                         bar.setVelocityX(-speedX);
                     }
                 }
@@ -814,7 +782,6 @@ class GameScene extends Phaser.Scene {
         if (this.isPhasing) return; 
         if (this.bounceTimer > 0) return;
 
-        // Leichtes Kamera-Shake bei Wandaufprall
         this.cameras.main.shake(100, 0.005);
 
         this.sound.play('wallHit', { volume: 0.4 });

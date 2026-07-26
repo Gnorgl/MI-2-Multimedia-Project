@@ -47,7 +47,6 @@ body {
     transition: transform 0.3s ease;
 }
 
-/* Hilfsklasse zum sauberen Verbergen von Elementen */
 .hidden {
     display: none !important;
 }
@@ -82,7 +81,7 @@ body {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    justify-content: center; /* Setzt die gesamte Gruppe absolut vertikal mittig */
+    justify-content: center; 
     gap: 20px;           
 }
 
@@ -96,7 +95,6 @@ body {
     margin-bottom: 20px;
 }
 
-/* Zentrierung des Abilities-Schriftzugs im linken Panel */
 .left-panel h2 {
     text-align: center;
     width: 100%;
@@ -108,7 +106,6 @@ body {
    3. ANZEIGEN
    ========================================================================== */
 
-/* Der Hauptcontainer für die Live-Statistiken */
 #stats-view {
     display: flex;
     flex-direction: column;
@@ -274,11 +271,11 @@ body {
 }
 
 .heli-item-icon {
-    width: 48px;            /* Gewünschte Breite im Shop-Panel */
-    height: 48px;           /* Gewünschte Höhe im Shop-Panel */
-    object-fit: contain;    /* Behält das Seitenverhältnis bei, ohne zu verzerren */
+    width: 48px;            
+    height: 48px;           
+    object-fit: contain;    
     display: block;
-    margin: 0 auto;         /* Zentriert das Bild im Shop-Slot */
+    margin: 0 auto;         
 }
 
 .heli-item-info {
@@ -286,10 +283,9 @@ body {
     flex-direction: column;
     text-align: left;
     gap: 3px; 
-    flex-grow: 1; /* Schiebt die Badges automatisch ganz nach rechts */
+    flex-grow: 1;
 }
 
-/* Der Preis bzw. OWNED als Hauptzeile ganz oben */
 .heli-item-price-status {
     font-size: 0.55rem;
     font-weight: bold;
@@ -317,7 +313,6 @@ body {
     font-weight: bold;
 }
 
-/* Zustand für gekaufte/aktive Helis */
 .heli-item.owned {
     background: #e0e0e0;
 }
@@ -325,7 +320,6 @@ body {
     color: #535353;
 }
 
-/* Zustand für gesperrte Helis */
 .heli-item.locked {
     opacity: 0.7;
 }
@@ -381,59 +375,43 @@ body {
     }
 }
 
-/* --- ICON-FÄRBUNG FÜR DIE FÄHIGKEITEN (LINKS) --- */
-
-/* Shield-Icon (Q) -> Hellblau */
 #card-shield .material-symbols-rounded {
     color: #00d2ff !important;
     text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
 }
 
-/* Growth-Icon (W) -> Grün */
 #card-growth .material-symbols-rounded {
     color: #00ff66 !important;
     text-shadow: 0 0 10px rgba(0, 255, 102, 0.5);
 }
 
-/* Phase-Icon (E) -> Lila */
 #card-phase .material-symbols-rounded {
     color: #cc00ff !important;
     text-shadow: 0 0 10px rgba(204, 0, 255, 0.5);
 }
 
-
-/* --- SPECIAL-ICON --- */
-
-/* Award Star beim Ultimate Heli -> Rot */
 #shop-heli-6 .heli-badge-icon {
     color: #ff3333 !important;
     text-shadow: 0 0 12px rgba(255, 51, 51, 0.6);
 }
 
-/* --- ICON-FÄRBUNG FÜR DIE BADGES IM SHOP (RECHTS) --- */
-
-/* Gemeinsames Styling für alle Badges */
 .heli-badge-icon {
     font-size: 20px;
     margin-left: 5px;
 }
 
-/* Shield-Badge -> Hellblau */
 #shop-heli-3 .heli-badge-icon:first-child {
     color: #00d2ff !important;
 }
 
-/* Growth-Badge -> Grün */
 #shop-heli-4 .heli-badge-icon:first-child {
     color: #00ff66 !important;
 }
 
-/* Phase-Badge -> Lila */
 #shop-heli-5 .heli-badge-icon:first-child {
     color: #cc00ff !important;
 }
 
-/* Alle speed_2x Badges -> Gelb */
 .heli-badge-icon[style*="speed_2x"], 
 .heli-badge-icon:contains("speed_2x"),
 .heli-item-badges .heli-badge-icon:nth-child(2) {
@@ -441,7 +419,6 @@ body {
     text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
 }
 
-/* Award Star -> Rot */
 #shop-heli-6 .heli-badge-icon {
     color: #ff3333 !important;
     text-shadow: 0 0 12px rgba(255, 51, 51, 0.6);
