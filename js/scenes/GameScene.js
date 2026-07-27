@@ -662,6 +662,8 @@ class GameScene extends Phaser.Scene {
             this.heliSound.stop();
         }
 
+        this.totalCoins = parseInt(localStorage.getItem('heli_total_coins')) || 0;
+
         if (this.player.y >= this.lavaCurrentY) {
             this.sound.play('explosion_lava', { volume: 0.85 });
         } else {
